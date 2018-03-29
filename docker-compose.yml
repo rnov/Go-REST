@@ -1,0 +1,39 @@
+version: '2'
+services:
+
+    # Application container
+    go:
+        build: .
+        ports:
+            - "80:8080"
+        links:
+#            - postgres
+#            - mongodb
+            - redis
+        command: "go run /go/src/Go-REST/application/main.go"
+        environment:
+            ENV_PATH: 'config/environments/docker/config.yml'
+            DEBUG: 'true'
+            PORT: '8080'
+    redis:
+        image: sickp/alpine-redis:3.2.2
+        restart: unless-stopped
+        ports:
+            - "6379:6379"
+
+#    postgres:
+#        image: onjin/alpine-postgres:9.5
+#        restart: unless-stopped
+#        ports:
+#            - "5432:5432"
+#        environment:
+#            LC_ALL: C.UTF-8
+#            POSTGRES_USER: random
+#            POSTGRES_PASSWORD: random
+#            POSTGRES_DB: random
+#
+#    mongodb:
+#        image: mvertes/alpine-mongo:3.2.3
+#        restart: unless-stopped
+#        ports:
+#            - "27017:27017"

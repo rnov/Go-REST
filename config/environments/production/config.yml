@@ -1,0 +1,13 @@
+server:
+  address: ":8080"
+redis:
+  -
+    host: "localhost"
+    port: 6379
+    db: 0
+
+loggers_paths: ""
+redis_logger:
+  name: "redisLog"
+  file: "redisLog.txt"
+  active: true
