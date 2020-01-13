@@ -1,58 +1,67 @@
-package controller
+package recipes
 
 import (
-	"Go-REST/application/common"
-	"Go-REST/application/dbInterface"
-	"Go-REST/application/model"
 	"errors"
+
+	"github.com/goRest/pkg/db"
+	e "github.com/goRest/pkg/errors"
+	log "github.com/goRest/pkg/logger"
 )
 
+type Recipe struct {
+	Id         string `json:"id"`
+	Name       string `json:"name"`
+	PrepTime   int    `json:"prepTime"`
+	Difficulty int    `json:"difficulty"`
+	Vegetarian bool   `json:"vegetarian"`
+}
+
 // this is a must, struct can not implement interface from different package.
-type RecipeController struct {
-	rcpDb  dbInterface.RecipesDbCalls
-	logger common.LogInterface
+type RecipeService struct {
+	rcpDb  db.RecipesDbCalls
+	logger log.Loggers
 	// add more func fields
 }
 
-func NewRecipeController(rcpDb dbInterface.RecipesDbCalls, logger common.LogInterface) *RecipeController {
-	recipeController := &RecipeController{
+func NewRecipeSrv(rcpDb db.RecipesDbCalls, logger log.Loggers) *RecipeService {
+	recipeSrv := &RecipeService{
 		rcpDb:  rcpDb,
 		logger: logger,
 	}
-	return recipeController
+	return recipeSrv
 }
 
-func (rcp *RecipeController) GetById(recipeId string) (*model.Recipe, error) {
+func (rcp *RecipeService) GetById(recipeId string) (*Recipe, error) {
 
 	recipe, err := rcp.rcpDb.GetRecipeById(recipeId)
 
 	if recipe == nil {
 		rcp.logger.Notice(err)
-		return nil, errors.New(common.NotFound)
+		return nil, &e.NotFoundErr{}
 	}
 
 	if err != nil {
 		rcp.logger.Error(err)
-		return nil, errors.New(common.DbError)
+		return nil, &e.DBErr{}
 	}
 
 	return recipe, nil
 
 }
 
-func (rcp *RecipeController) ListAll() ([]*model.Recipe, error) {
+func (rcp *RecipeService) ListAll() ([]*Recipe, error) {
 
 	recipes, err := rcp.rcpDb.GetAllRecipes()
 
 	if err != nil {
 		rcp.logger.Error(err)
-		return nil, errors.New(common.DbError)
+		return nil, &e.DBErr{}
 	}
 
 	return recipes, nil
 }
 
-func (rcp *RecipeController) Create(recipe *model.Recipe, auth string) (map[string]string, error) {
+func (rcp *RecipeService) Create(recipe *Recipe, auth string) (map[string]string, error) {
 
 	err := rcp.rcpDb.CheckAuthToken(auth)
 	if err != nil {
@@ -62,22 +71,24 @@ func (rcp *RecipeController) Create(recipe *model.Recipe, auth string) (map[stri
 
 	valid := validateRecipeDataRange(recipe)
 	if len(valid) > 0 {
-		return valid, errors.New(common.InvalidParams)
+		return valid, &e.InvalidParamsErr{}
 	}
 
 	err = rcp.rcpDb.CreateRecipe(recipe)
 
 	if err != nil {
-		if err.Error() == common.DbError {
+
+		if errors.Is(err, &e.DBErr{}) {
 			rcp.logger.Error(err)
 		}
+
 		return nil, err
 	}
 
 	return nil, nil
 }
 
-func (rcp *RecipeController) Update(recipe *model.Recipe, urlId string, auth string) (map[string]string, error) {
+func (rcp *RecipeService) Update(recipe *Recipe, urlId string, auth string) (map[string]string, error) {
 
 	err := rcp.rcpDb.CheckAuthToken(auth)
 	if err != nil {
@@ -87,12 +98,12 @@ func (rcp *RecipeController) Update(recipe *model.Recipe, urlId string, auth str
 
 	valid := validateRecipeDataRange(recipe)
 	if len(valid) == 0 && urlId != recipe.Id {
-		return valid, errors.New(common.InvalidParams)
+		return valid, &e.InvalidParamsErr{}
 	}
 
 	err = rcp.rcpDb.UpdateRecipe(recipe)
 	if err != nil {
-		if err.Error() == common.DbError {
+		if errors.Is(err, &e.DBErr{}) {
 			rcp.logger.Error(err)
 		}
 		return nil, err
@@ -101,7 +112,7 @@ func (rcp *RecipeController) Update(recipe *model.Recipe, urlId string, auth str
 	return nil, nil
 }
 
-func (rcp *RecipeController) Delete(recipeId string, auth string) error {
+func (rcp *RecipeService) Delete(recipeId string, auth string) error {
 
 	err := rcp.rcpDb.CheckAuthToken(auth)
 	if err != nil {
@@ -111,7 +122,7 @@ func (rcp *RecipeController) Delete(recipeId string, auth string) error {
 
 	err = rcp.rcpDb.DeleteRecipe(recipeId)
 	if err != nil {
-		if err.Error() == common.DbError {
+		if errors.Is(err, &e.DBErr{}) {
 			rcp.logger.Error(err)
 		}
 		return err
@@ -119,18 +130,19 @@ func (rcp *RecipeController) Delete(recipeId string, auth string) error {
 	return nil
 }
 
-func validateRecipeDataRange(recipe *model.Recipe) map[string]string {
+// fixme : error msg
+func validateRecipeDataRange(recipe *Recipe) map[string]string {
 
 	valid := make(map[string]string)
 
 	if recipe.Difficulty <= 1 || recipe.Difficulty > 3 {
-		valid[common.Difficulty] = common.OutOfRange
+		valid[e.Difficulty] = e.OutOfRange
 	}
 	if len(recipe.Name) > 100 {
-		valid[common.Name] = common.TooLong
+		valid[e.Name] = e.TooLong
 	}
 	if recipe.PrepTime <= 1 || recipe.PrepTime > 1000 {
-		valid[common.Preptime] = common.OutOfRange
+		valid[e.Preptime] = e.OutOfRange
 	}
 	return valid
 }

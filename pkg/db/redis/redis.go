@@ -1,4 +1,4 @@
-package dbInterface
+package redis
 
 import (
 	"fmt"

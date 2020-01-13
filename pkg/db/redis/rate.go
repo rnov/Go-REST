@@ -1,8 +1,6 @@
-package dbInterface
+package redis
 
 import (
-	msg "Go-REST/application/common"
-	"Go-REST/application/model"
 	"errors"
 	"strconv"
 	"time"

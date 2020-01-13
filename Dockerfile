@@ -14,4 +14,4 @@ WORKDIR /go/src/Go-REST
 # build (compile)
 RUN cd /go/src/Go-REST/application &&  go build -o main .
 # command to be launched
-#CMD ["go", "run", "/go/src/Go-REST/application/main.go"]
+#CMD ["go", "run", "/go/src/goRest/application/main.go"]

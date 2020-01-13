@@ -1,9 +1,9 @@
-package dbInterface
+package db
 
 import (
-	msg "Go-REST/application/common"
-	"Go-REST/application/model"
 	"errors"
+	rcp "github.com/goRest/pkg/recipes"
+	"github.com/goRest/pkg/rates"
 )
 
 const (
@@ -16,16 +16,16 @@ const (
 
 type RecipesDbCalls interface {
 	CheckAuthToken(auth string) error
-	GetRecipeById(recipeId string) (*model.Recipe, error)
-	GetAllRecipes() ([]*model.Recipe, error)
-	CreateRecipe(recipe *model.Recipe) error
-	UpdateRecipe(recipe *model.Recipe) error
+	GetRecipeById(recipeId string) (*rcp.Recipe, error)
+	GetAllRecipes() ([]*rcp.Recipe, error)
+	CreateRecipe(recipe *rcp.Recipe) error
+	UpdateRecipe(recipe *rcp.Recipe) error
 	DeleteRecipe(recipeId string) error
 }
 
 type RateDbCalls interface {
 	CheckAuthToken(auth string) error
-	RateRecipe(recipeId string, rate *model.Rate) error
+	RateRecipe(recipeId string, rate *rates.Rate) error
 }
 
 func (rProxy *RedisProxy) CheckAuthToken(auth string) error {

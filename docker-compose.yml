@@ -10,7 +10,7 @@ services:
 #            - postgres
 #            - mongodb
             - redis
-        command: "go run /go/src/Go-REST/application/main.go"
+        command: "go run /go/src/goRest/application/main.go"
         environment:
             ENV_PATH: 'config/environments/docker/config.yml'
             DEBUG: 'true'

@@ -3,7 +3,7 @@ package main
 import (
 	"Go-REST/application/apiRest"
 	"Go-REST/application/apiRest/handlers"
-	infra "Go-REST/application/common"
+	infra "goRest/application/common"
 	"Go-REST/application/controller"
 	"Go-REST/application/dbInterface"
 	"fmt"

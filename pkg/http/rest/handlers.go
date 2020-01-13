@@ -1,16 +1,99 @@
-package handlers
+package rest
 
 import (
-	msg "Go-REST/application/common"
-	"Go-REST/application/controller"
-	"Go-REST/application/model"
+	
 	"encoding/json"
 	"fmt"
+	"github.com/goRest/pkg/rates"
+	"github.com/goRest/pkg/recipes"
+	"github.com/julienschmidt/httprouter"
 	"net/http"
 	"strings"
-
-	"github.com/julienschmidt/httprouter"
+	
+	
 )
+
+type RecipeAPI interface {
+	GetById(recipeId string) (*recipes.Recipe, error)
+	ListAll() ([]*recipes.Recipe, error)
+	Create(recipe *recipes.Recipe, auth string) (map[string]string, error)
+	Update(recipe *recipes.Recipe, urlId string, auth string) (map[string]string, error)
+	Delete(recipeId string, auth string) error
+}
+
+type RateAPI interface {
+	Rate(id string, rating *rates.Rate) (map[string]string, error) // rate recipe
+}
+
+func NewRouter(rcpHand *handlers.RecipeHandler, rateHand *handlers.RateHandler) *httprouter.Router {
+	ApiRestRouter := &httprouter.Router{}
+	configRecipeEndpoints(ApiRestRouter, rcpHand)
+	configRateEndPoints(ApiRestRouter, rateHand)
+
+	return ApiRestRouter
+}
+
+// note private functions needed to configure route's endpoints, used in NewRouter
+func configRecipeEndpoints(router *httprouter.Router, rcpHand *handlers.RecipeHandler) {
+	router.GET("/recipes/:id", rcpHand.GetRecipeById)
+	router.GET("/recipes", rcpHand.GetAllRecipes)
+	router.DELETE("/recipes/:id", rcpHand.DeleteRecipe)
+	router.POST("/recipes", rcpHand.CreateRecipe)
+	router.PUT("/recipes/:id", rcpHand.UpdateRecipe)
+}
+
+func configRateEndPoints(router *httprouter.Router, rateHand *handlers.RateHandler) {
+	router.POST("/recipes/:id/rating", rateHand.RateRecipe)
+}
+
+type RateHandler struct {
+	rateController controller.ApiRateCalls
+}
+
+func NewRateHandler(rateInterface controller.ApiRateCalls) *RateHandler {
+	rateHandler := &RateHandler{
+		rateController: rateInterface,
+	}
+	return rateHandler
+}
+
+func (rateHand *RateHandler) RateRecipe(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
+
+	id := p.ByName("id")
+	if len(id) == 0 {
+		w.WriteHeader(400)
+		return
+	}
+
+	rating := &rates.Rate{}
+	err := json.NewDecoder(r.Body).Decode(&rating)
+
+	if err != nil {
+		w.WriteHeader(404)
+		return
+	}
+
+	invalidParams, err := rateHand.rateController.Rate(id, rating)
+	if err != nil {
+		if err.Error() == msg.DbError {
+			w.WriteHeader(500)
+			return
+		} else if err.Error() == msg.InvalidParams {
+			// Marshal provided interface into JSON structure
+			jsonParams, _ := json.Marshal(invalidParams)
+
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(400)
+			fmt.Fprintf(w, "%s", jsonParams)
+			return
+		} else if err.Error() == msg.NotFound {
+			w.WriteHeader(404)
+			return
+		}
+	}
+	w.WriteHeader(200)
+
+}
 
 // interface, could get any controller that implements the interface (redis, mongo, psql ...)
 type RecipeHandler struct {
@@ -87,7 +170,7 @@ func (rcphand *RecipeHandler) GetAllRecipes(w http.ResponseWriter, r *http.Reque
 
 func (rcphand *RecipeHandler) CreateRecipe(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 
-	recipe := model.Recipe{}
+	recipe := recipes.Recipe{}
 	err := json.NewDecoder(r.Body).Decode(&recipe)
 
 	if err != nil {
@@ -109,6 +192,7 @@ func (rcphand *RecipeHandler) CreateRecipe(w http.ResponseWriter, r *http.Reques
 	invalidParams, err := rcphand.recipeController.Create(&recipe, auth[1])
 
 	if err != nil {
+
 		if err.Error() == msg.AuthFailed {
 			w.WriteHeader(401)
 			return
@@ -129,13 +213,15 @@ func (rcphand *RecipeHandler) CreateRecipe(w http.ResponseWriter, r *http.Reques
 			fmt.Fprintf(w, "%s", jsonParams)
 			return
 		}
+
+
 	}
 
 	w.WriteHeader(201)
 }
 
 func (rcphand *RecipeHandler) UpdateRecipe(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
-	recipe := model.Recipe{}
+	recipe := recipes.Recipe{}
 	err := json.NewDecoder(r.Body).Decode(&recipe)
 
 	if err != nil {

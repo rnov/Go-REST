@@ -1,4 +1,4 @@
-package common
+package logger
 
 import (
 	"fmt"
@@ -7,8 +7,8 @@ import (
 	"github.com/op/go-logging"
 )
 
-// note: get from go-logging/logger.go
-type LogInterface interface {
+// note: get from go-logging/log.go
+type Loggers interface {
 	Fatal(args ...interface{})
 	Fatalf(format string, args ...interface{})
 	Panic(args ...interface{})
@@ -41,7 +41,7 @@ func NewLogger(log LoggerConfig, path string) *logging.Logger {
 	}
 
 	var format = logging.MustStringFormatter(
-		`%{color}%{time:15:04:05.000} %{shortfunc} ▶ %{level:.4s} %{id:03x}%{color:reset} %{message}`,
+		`%{color}%{time:15:04:05.000} %{shortfunc} ▶ %{level:.4s} %{id:03x}%{color:reset} %{errors}`,
 	)
 
 	backend := logging.NewLogBackend(logFile, "", 0)
