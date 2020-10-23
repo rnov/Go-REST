@@ -17,7 +17,7 @@ func NewRedisProxy(client *redis.Client) *RedisProxy {
 	return redisProxy
 }
 
-func NewClient(host string, port int, db int) *redis.Client {
+func NewRedisClient(host string, port int, db int) *redis.Client {
 
 	client := redis.NewClient(&redis.Options{
 		Addr:     fmt.Sprintf("%s:%d", host, port),
@@ -27,31 +27,32 @@ func NewClient(host string, port int, db int) *redis.Client {
 	return client
 }
 
-type RedisWrapper interface {
-	Del(key string) *redis.IntCmd
-	HGetAll(key string) *redis.StringStringMapCmd
-	HMSet(key string, fields map[string]interface{}) *redis.StatusCmd
-	Exists(key string) *redis.IntCmd
-	Keys(pattern string) *redis.StringSliceCmd
-}
+// note these methods are not useful, do not add anything
+//type RedisWrapper interface {
+//	Del(key string) *redis.IntCmd
+//	HGetAll(key string) *redis.StringStringMapCmd
+//	HMSet(key string, fields map[string]interface{}) *redis.StatusCmd
+//	Exists(key string) *redis.IntCmd
+//	Keys(pattern string) *redis.StringSliceCmd
+//}
 
-func (rp *RedisProxy) Del(key string) *redis.IntCmd {
-	return rp.redisMaster.Del(key)
-}
+//func (rp *RedisProxy) Del(key string) *redis.IntCmd {
+//	return rp.redisMaster.Del(key)
+//}
 
-func (rp *RedisProxy) HGetAll(key string) *redis.StringStringMapCmd {
-	return rp.redisMaster.HGetAll(key)
-}
+//func (rp *RedisProxy) HGetAll(key string) *redis.StringStringMapCmd {
+//	return rp.redisMaster.HGetAll(key)
+//}
 
 // fields map[string]interface{}
-func (rp *RedisProxy) HMSet(key string, fields map[string]interface{}) *redis.StatusCmd {
-	return rp.redisMaster.HMSet(key, fields)
-}
+//func (rp *RedisProxy) HMSet(key string, fields map[string]interface{}) *redis.StatusCmd {
+//	return rp.redisMaster.HMSet(key, fields)
+//}
 
-func (rp *RedisProxy) Exists(key string) *redis.IntCmd {
-	return rp.redisMaster.Exists(key)
-}
+//func (rp *RedisProxy) Exists(key string) *redis.IntCmd {
+//	return rp.redisMaster.Exists(key)
+//}
 
-func (rp *RedisProxy) Keys(pattern string) *redis.StringSliceCmd {
-	return rp.redisMaster.Keys(pattern)
-}
+//func (rp *RedisProxy) Keys(pattern string) *redis.StringSliceCmd {
+//	return rp.redisMaster.Keys(pattern)
+//}

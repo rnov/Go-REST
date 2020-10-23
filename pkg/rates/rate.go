@@ -4,9 +4,9 @@ package rates
 
 import (
 	"errors"
-	"github.com/goRest/pkg/db"
-	e "github.com/goRest/pkg/errors"
-	log "github.com/goRest/pkg/logger"
+	"github.com/rnov/Go-REST/pkg/db"
+	e "github.com/rnov/Go-REST/pkg/errors"
+	log "github.com/rnov/Go-REST/pkg/logger"
 )
 
 type Rate struct {
@@ -27,7 +27,6 @@ func NewRateSrv(rateDb db.RateDbCalls, logger log.Loggers) *RateService {
 	return rateSrv
 }
 
-// fixme errors and pkg/errors should no be use in the same package... erros should be inside pgk/err
 func (rateDb *RateService) Rate(id string, rate *Rate) (map[string]string, error) {
 
 	valid := validateRateDataRange(id, rate)
@@ -46,7 +45,6 @@ func (rateDb *RateService) Rate(id string, rate *Rate) (map[string]string, error
 	return nil, nil
 }
 
-// fixme these error msg should no be in pkg/errors rather defined in these package
 func validateRateDataRange(id string, rate *Rate) map[string]string {
 	valid := make(map[string]string)
 

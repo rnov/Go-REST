@@ -1,17 +1,10 @@
 package db
 
 import (
-	"errors"
-	rcp "github.com/goRest/pkg/recipes"
-	"github.com/goRest/pkg/rates"
-)
-
-const (
-	RedisAllPattern        = "*"
-	RedisRecipePattern     = "RECIPE_"
-	RedisTokenPattern      = "TOKEN_"
-	RedisTrue              = "True"
-	RedisRecipeRatePattern = "RATE_"
+	"github.com/rnov/Go-REST/pkg/db/redis"
+	"github.com/rnov/Go-REST/pkg/errors"
+	"github.com/rnov/Go-REST/pkg/rates"
+	rcp "github.com/rnov/Go-REST/pkg/recipes"
 )
 
 type RecipesDbCalls interface {
@@ -28,15 +21,24 @@ type RateDbCalls interface {
 	RateRecipe(recipeId string, rate *rates.Rate) error
 }
 
-func (rProxy *RedisProxy) CheckAuthToken(auth string) error {
+type Client interface {
+	RecipesDbCalls
+	RateDbCalls
+}
 
-	exist, err := rProxy.Exists(RedisTokenPattern + auth).Result()
-	if err != nil {
-		return err
+func NewDbClient(t string) (Client, error) {
+	//var retVal = RecipesDbCalls{}
+	switch t {
+	case "redis":
+		// note: check ping pong etc - consult main
+		redisClient := redis.NewRedisClient("host", 8080, 1)
+		//check connection with redis
+		if _, err := redisClient.Ping().Result(); err != nil {
+			return nil, err
+		}
+		//fmt.Println(pong)
+		// create redisProxy with the given client (master)
+		return redis.NewRedisProxy(redisClient), nil
 	}
-	if exist == 0 {
-		return errors.New(msg.AuthFailed)
-	}
-
-	return nil
+	return nil, errors.NewNotFoundErr("")
 }

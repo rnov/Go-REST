@@ -2,6 +2,7 @@ package logger
 
 import (
 	"fmt"
+	"github.com/rnov/Go-REST/pkg/config"
 	"os"
 
 	"github.com/op/go-logging"
@@ -28,7 +29,7 @@ type Loggers interface {
 }
 
 // done
-func NewLogger(log LoggerConfig, path string) *logging.Logger {
+func NewLogger(log config.LoggerConfig, path string) *logging.Logger {
 
 	// initialice a logger
 	logger := logging.MustGetLogger(log.Name)

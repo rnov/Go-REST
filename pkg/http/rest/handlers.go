@@ -1,16 +1,15 @@
 package rest
 
 import (
-	
 	"encoding/json"
 	"fmt"
-	"github.com/goRest/pkg/rates"
-	"github.com/goRest/pkg/recipes"
 	"github.com/julienschmidt/httprouter"
+	"github.com/rnov/Go-REST/pkg/errors"
+	"github.com/rnov/Go-REST/pkg/rates"
+	"github.com/rnov/Go-REST/pkg/recipes"
+
 	"net/http"
 	"strings"
-	
-	
 )
 
 type RecipeAPI interface {
@@ -25,7 +24,7 @@ type RateAPI interface {
 	Rate(id string, rating *rates.Rate) (map[string]string, error) // rate recipe
 }
 
-func NewRouter(rcpHand *handlers.RecipeHandler, rateHand *handlers.RateHandler) *httprouter.Router {
+func NewRouter(rcpHand *RecipeHandler, rateHand *RateHandler) *httprouter.Router {
 	ApiRestRouter := &httprouter.Router{}
 	configRecipeEndpoints(ApiRestRouter, rcpHand)
 	configRateEndPoints(ApiRestRouter, rateHand)
@@ -34,7 +33,7 @@ func NewRouter(rcpHand *handlers.RecipeHandler, rateHand *handlers.RateHandler) 
 }
 
 // note private functions needed to configure route's endpoints, used in NewRouter
-func configRecipeEndpoints(router *httprouter.Router, rcpHand *handlers.RecipeHandler) {
+func configRecipeEndpoints(router *httprouter.Router, rcpHand *RecipeHandler) {
 	router.GET("/recipes/:id", rcpHand.GetRecipeById)
 	router.GET("/recipes", rcpHand.GetAllRecipes)
 	router.DELETE("/recipes/:id", rcpHand.DeleteRecipe)
@@ -42,17 +41,17 @@ func configRecipeEndpoints(router *httprouter.Router, rcpHand *handlers.RecipeHa
 	router.PUT("/recipes/:id", rcpHand.UpdateRecipe)
 }
 
-func configRateEndPoints(router *httprouter.Router, rateHand *handlers.RateHandler) {
+func configRateEndPoints(router *httprouter.Router, rateHand *RateHandler) {
 	router.POST("/recipes/:id/rating", rateHand.RateRecipe)
 }
 
 type RateHandler struct {
-	rateController controller.ApiRateCalls
+	rateController rates.RateService
 }
 
-func NewRateHandler(rateInterface controller.ApiRateCalls) *RateHandler {
+func NewRateHandler(rateSrv rates.RateService) *RateHandler {
 	rateHandler := &RateHandler{
-		rateController: rateInterface,
+		rateController: rateSrv,
 	}
 	return rateHandler
 }
@@ -75,56 +74,58 @@ func (rateHand *RateHandler) RateRecipe(w http.ResponseWriter, r *http.Request, 
 
 	invalidParams, err := rateHand.rateController.Rate(id, rating)
 	if err != nil {
-		if err.Error() == msg.DbError {
-			w.WriteHeader(500)
-			return
-		} else if err.Error() == msg.InvalidParams {
-			// Marshal provided interface into JSON structure
-			jsonParams, _ := json.Marshal(invalidParams)
-
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(400)
-			fmt.Fprintf(w, "%s", jsonParams)
-			return
-		} else if err.Error() == msg.NotFound {
-			w.WriteHeader(404)
-			return
-		}
+		fmt.Sprint(invalidParams)
+		//if err.Error() == msg.DbError {
+		//	w.WriteHeader(500)
+		//	return
+		//} else if err.Error() == msg.InvalidParams {
+		//	// Marshal provided interface into JSON structure
+		//	jsonParams, _ := json.Marshal(invalidParams)
+		//
+		//	w.Header().Set("Content-Type", "application/json")
+		//	w.WriteHeader(400)
+		//	fmt.Fprintf(w, "%s", jsonParams)
+		//	return
+		//} else if err.Error() == msg.NotFound {
+		//	w.WriteHeader(404)
+		//	return
+		//}
 	}
-	w.WriteHeader(200)
 
+	w.WriteHeader(200)
 }
 
 // interface, could get any controller that implements the interface (redis, mongo, psql ...)
 type RecipeHandler struct {
-	recipeController controller.ApiRecipeCalls
+	rcpSrv recipes.RecipeService
+	// add a logger ? be able to log at handler level ?? move from service and log in here, good idea ?
 }
 
-func NewRecipeHandler(rcpInterface controller.ApiRecipeCalls) *RecipeHandler {
+func NewRecipeHandler(rcpsrv recipes.RecipeService ) *RecipeHandler {
 	recipeHandler := &RecipeHandler{
-		recipeController: rcpInterface,
+		rcpSrv: rcpsrv,
 	}
 	return recipeHandler
 }
 
 func (rcphand *RecipeHandler) GetRecipeById(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 
-	id := p.ByName(msg.RecipeId)
+	id := p.ByName("msg.RecipeId")
 	if len(id) == 0 {
 		w.WriteHeader(400)
 		return
 	}
 
-	recipe, err := rcphand.recipeController.GetById(id)
+	recipe, err := rcphand.rcpSrv.GetById(id)
 
 	if err != nil {
-		if err.Error() == msg.DbError {
-			w.WriteHeader(500)
-			return
-		} else if err.Error() == msg.NotFound {
-			w.WriteHeader(404)
-			return
-		}
+		//if err.Error() == msg.DbError {
+		//	w.WriteHeader(500)
+		//	return
+		//} else if err.Error() == msg.NotFound {
+		//	w.WriteHeader(404)
+		//	return
+		//}
 	}
 
 	// Marshal provided interface into JSON structure
@@ -142,10 +143,10 @@ func (rcphand *RecipeHandler) GetRecipeById(w http.ResponseWriter, r *http.Reque
 
 func (rcphand *RecipeHandler) GetAllRecipes(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 
-	recipes, err := rcphand.recipeController.ListAll()
+	recipes, err := rcphand.rcpSrv.ListAll()
 
 	if err != nil {
-		if err.Error() == msg.DbError {
+		if err.Error() == "msg.DbError" {
 			w.WriteHeader(500)
 			return
 		}
@@ -178,7 +179,7 @@ func (rcphand *RecipeHandler) CreateRecipe(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	auth := r.Header[msg.Authentication]
+	auth := r.Header["msg.Authentication"]
 	if len(auth) != 1 {
 		w.WriteHeader(401)
 		return
@@ -189,32 +190,30 @@ func (rcphand *RecipeHandler) CreateRecipe(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	invalidParams, err := rcphand.recipeController.Create(&recipe, auth[1])
+	invalidParams, err := rcphand.rcpSrv.Create(&recipe, auth[1])
 
 	if err != nil {
-
-		if err.Error() == msg.AuthFailed {
-			w.WriteHeader(401)
-			return
-		} else if err.Error() == msg.DbError {
-			w.WriteHeader(500)
-			return
-		} else if err.Error() == msg.Exists {
-			w.WriteHeader(409)
-			return
-		} else if err.Error() == msg.InvalidParams {
-			jsonParams, err := json.Marshal(invalidParams)
-			if err != nil {
-				w.WriteHeader(500)
-				return
-			}
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(400)
-			fmt.Fprintf(w, "%s", jsonParams)
-			return
-		}
-
-
+		fmt.Sprint(invalidParams)
+		//if err.Error() == msg.AuthFailed {
+		//	w.WriteHeader(401)
+		//	return
+		//} else if err.Error() == msg.DbError {
+		//	w.WriteHeader(500)
+		//	return
+		//} else if err.Error() == msg.Exists {
+		//	w.WriteHeader(409)
+		//	return
+		//} else if err.Error() == msg.InvalidParams {
+		//	jsonParams, err := json.Marshal(invalidParams)
+		//	if err != nil {
+		//		w.WriteHeader(500)
+		//		return
+		//	}
+		//	w.Header().Set("Content-Type", "application/json")
+		//	w.WriteHeader(400)
+		//	fmt.Fprintf(w, "%s", jsonParams)
+		//	return
+		//}
 	}
 
 	w.WriteHeader(201)
@@ -229,7 +228,7 @@ func (rcphand *RecipeHandler) UpdateRecipe(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	auth := r.Header[msg.Authentication]
+	auth := r.Header["msg.Authentication"]
 	if len(auth) != 1 {
 		w.WriteHeader(400)
 		return
@@ -240,45 +239,46 @@ func (rcphand *RecipeHandler) UpdateRecipe(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	id := p.ByName(msg.RecipeId)
+	id := p.ByName("msg.RecipeId")
 	if len(id) == 0 {
 		w.WriteHeader(400)
 		return
 	}
 
-	invalidParams, err := rcphand.recipeController.Update(&recipe, id, auth[1])
-	if err != nil {
-		if err.Error() == msg.AuthFailed {
-			w.WriteHeader(401)
-			return
-		} else if err.Error() == msg.DbError {
-			w.WriteHeader(500)
-			return
-		} else if err.Error() == msg.NotFound {
-			w.WriteHeader(404)
-			return
-		} else if err.Error() == msg.InvalidParams {
-			jsonParams, _ := json.Marshal(invalidParams)
-
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(400)
-			fmt.Fprintf(w, "%s", jsonParams)
-			return
-		}
-	}
+	// fixme ...
+	//invalidParams, err := rcphand.rcpSrv.Update(&recipe, id, auth[1])
+	//if err != nil {
+	//	if err.Error() == msg.AuthFailed {
+	//		w.WriteHeader(401)
+	//		return
+	//	} else if err.Error() == msg.DbError {
+	//		w.WriteHeader(500)
+	//		return
+	//	} else if err.Error() == msg.NotFound {
+	//		w.WriteHeader(404)
+	//		return
+	//	} else if err.Error() == msg.InvalidParams {
+	//		jsonParams, _ := json.Marshal(invalidParams)
+	//
+	//		w.Header().Set("Content-Type", "application/json")
+	//		w.WriteHeader(400)
+	//		fmt.Fprintf(w, "%s", jsonParams)
+	//		return
+	//	}
+	//}
 
 	w.WriteHeader(200)
 }
 
 func (rcphand *RecipeHandler) DeleteRecipe(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 
-	id := p.ByName(msg.RecipeId)
+	id := p.ByName("RecipeId")
 	if len(id) == 0 {
 		w.WriteHeader(400)
 		return
 	}
 
-	auth := r.Header[msg.Authentication]
+	auth := r.Header["Authentication"]
 	if len(auth) != 1 {
 		w.WriteHeader(401)
 		return
@@ -289,23 +289,63 @@ func (rcphand *RecipeHandler) DeleteRecipe(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	err := rcphand.recipeController.Delete(id, auth[1])
-	if err != nil {
-		if err.Error() == msg.DbError {
-			w.WriteHeader(500)
-			return
-		} else if err.Error() == msg.AuthFailed {
-			w.WriteHeader(401)
-			return
-		} else if err.Error() == msg.NotFound {
-			w.WriteHeader(404)
-			return
-		}
+	if err := rcphand.rcpSrv.Delete(id, auth[1]); err != nil {
+		buildErrorResponse(w, err)
 	}
+	// todo delete
+	//if err != nil {
+	//	if err.Error() == msg.DbError {
+	//		w.WriteHeader(500)
+	//		return
+	//	} else if err.Error() == msg.AuthFailed {
+	//		w.WriteHeader(401)
+	//		return
+	//	} else if err.Error() == msg.NotFound {
+	//		w.WriteHeader(404)
+	//		return
+	//	}
+	//}
 
 	w.WriteHeader(204)
 }
 
 func validateAuthStructure(auth []string) bool {
-	return len(auth) != 2 || auth[0] != msg.Bearer
+	return len(auth) != 2 || auth[0] != "msg.Bearer"
+}
+
+func buildErrorResponse(w http.ResponseWriter, err error) {
+
+	switch e := err.(type) {
+	case *errors.AuthFailedErr:
+		w.WriteHeader(http.StatusUnauthorized)
+	case *errors.DBErr:
+		w.WriteHeader(http.StatusInternalServerError)
+	case *errors.NotFoundErr:
+		w.WriteHeader(http.StatusNotFound)
+	case *errors.InvalidParamsErr:
+		w.WriteHeader(http.StatusBadRequest)
+		jsonParams, _ := json.Marshal(e.Prm)
+		w.Header().Set("Content-Type", "application/json")
+
+		fmt.Fprintf(w, "%s", jsonParams)
+
+	}
+
+	//if err.Error() == msg.AuthFailed {
+	//	w.WriteHeader(401)
+	//	return
+	//} else if err.Error() == msg.DbError {
+	//	w.WriteHeader(500)
+	//	return
+	//} else if err.Error() == msg.NotFound {
+	//	w.WriteHeader(404)
+	//	return
+	//} else if err.Error() == msg.InvalidParams {
+	//	jsonParams, _ := json.Marshal(invalidParams)
+	//
+	//	w.Header().Set("Content-Type", "application/json")
+	//	w.WriteHeader(400)
+	//	fmt.Fprintf(w, "%s", jsonParams)
+	//	return
+	//}
 }

@@ -1,11 +1,9 @@
 package recipes
 
 import (
-	"errors"
-
-	"github.com/goRest/pkg/db"
-	e "github.com/goRest/pkg/errors"
-	log "github.com/goRest/pkg/logger"
+	"github.com/rnov/Go-REST/pkg/db"
+	"github.com/rnov/Go-REST/pkg/errors"
+	log "github.com/rnov/Go-REST/pkg/logger"
 )
 
 type Recipe struct {
@@ -37,12 +35,12 @@ func (rcp *RecipeService) GetById(recipeId string) (*Recipe, error) {
 
 	if recipe == nil {
 		rcp.logger.Notice(err)
-		return nil, &e.NotFoundErr{}
+		return nil, &errors.NotFoundErr{}
 	}
 
 	if err != nil {
 		rcp.logger.Error(err)
-		return nil, &e.DBErr{}
+		return nil, &errors.DBErr{}
 	}
 
 	return recipe, nil
@@ -55,7 +53,7 @@ func (rcp *RecipeService) ListAll() ([]*Recipe, error) {
 
 	if err != nil {
 		rcp.logger.Error(err)
-		return nil, &e.DBErr{}
+		return nil, &errors.DBErr{}
 	}
 
 	return recipes, nil
@@ -63,6 +61,7 @@ func (rcp *RecipeService) ListAll() ([]*Recipe, error) {
 
 func (rcp *RecipeService) Create(recipe *Recipe, auth string) (map[string]string, error) {
 
+	// todo move CheckAuthToken in the middleware
 	err := rcp.rcpDb.CheckAuthToken(auth)
 	if err != nil {
 		rcp.logger.Error(err)
@@ -71,16 +70,16 @@ func (rcp *RecipeService) Create(recipe *Recipe, auth string) (map[string]string
 
 	valid := validateRecipeDataRange(recipe)
 	if len(valid) > 0 {
-		return valid, &e.InvalidParamsErr{}
+		return valid, &errors.InvalidParamsErr{}
 	}
 
 	err = rcp.rcpDb.CreateRecipe(recipe)
 
 	if err != nil {
-
-		if errors.Is(err, &e.DBErr{}) {
-			rcp.logger.Error(err)
-		}
+		// note log errors in handler
+		//if errors.Is(err, &e.DBErr{}) {
+		//	rcp.logger.Error(err)
+		//}
 
 		return nil, err
 	}
@@ -90,6 +89,7 @@ func (rcp *RecipeService) Create(recipe *Recipe, auth string) (map[string]string
 
 func (rcp *RecipeService) Update(recipe *Recipe, urlId string, auth string) (map[string]string, error) {
 
+	// todo move CheckAuthToken in the middleware
 	err := rcp.rcpDb.CheckAuthToken(auth)
 	if err != nil {
 		rcp.logger.Error(err)
@@ -98,14 +98,12 @@ func (rcp *RecipeService) Update(recipe *Recipe, urlId string, auth string) (map
 
 	valid := validateRecipeDataRange(recipe)
 	if len(valid) == 0 && urlId != recipe.Id {
-		return valid, &e.InvalidParamsErr{}
+		return nil, errors.NewInvalidParamsErr(valid)
 	}
 
 	err = rcp.rcpDb.UpdateRecipe(recipe)
 	if err != nil {
-		if errors.Is(err, &e.DBErr{}) {
-			rcp.logger.Error(err)
-		}
+		rcp.logger.Error(err)
 		return nil, err
 	}
 
@@ -114,6 +112,7 @@ func (rcp *RecipeService) Update(recipe *Recipe, urlId string, auth string) (map
 
 func (rcp *RecipeService) Delete(recipeId string, auth string) error {
 
+	// todo move CheckAuthToken in the middleware
 	err := rcp.rcpDb.CheckAuthToken(auth)
 	if err != nil {
 		rcp.logger.Error(err)
@@ -122,27 +121,27 @@ func (rcp *RecipeService) Delete(recipeId string, auth string) error {
 
 	err = rcp.rcpDb.DeleteRecipe(recipeId)
 	if err != nil {
-		if errors.Is(err, &e.DBErr{}) {
-			rcp.logger.Error(err)
-		}
+		// note log errors in handler
+		//if errors.Is(err, &e.DBErr{}) {
+		//	rcp.logger.Error(err)
+		//}
 		return err
 	}
 	return nil
 }
 
-// fixme : error msg
 func validateRecipeDataRange(recipe *Recipe) map[string]string {
 
 	valid := make(map[string]string)
 
 	if recipe.Difficulty <= 1 || recipe.Difficulty > 3 {
-		valid[e.Difficulty] = e.OutOfRange
+		valid[errors.Difficulty] = errors.OutOfRange
 	}
 	if len(recipe.Name) > 100 {
-		valid[e.Name] = e.TooLong
+		valid[errors.Name] = errors.TooLong
 	}
 	if recipe.PrepTime <= 1 || recipe.PrepTime > 1000 {
-		valid[e.Preptime] = e.OutOfRange
+		valid[errors.Preptime] = errors.OutOfRange
 	}
 	return valid
 }

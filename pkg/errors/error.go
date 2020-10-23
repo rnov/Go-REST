@@ -27,44 +27,78 @@ const (
 const (
 	Authentication = "Authentication"
 	Bearer         = "bearer"
-	RecipeId      = "id"
+	RecipeId       = "id"
 )
 
 type ExistErr struct {
-	s string
+	msg string
 }
+
 func (myErr *ExistErr) Error() string {
 	return Exists
 }
 
-type NotFoundErr struct {
-	s string
+func NewExistErr(message string) *ExistErr {
+	return &ExistErr{
+		msg: message,
+	}
 }
+
+type NotFoundErr struct {
+	msg string
+}
+
 func (myErr *NotFoundErr) Error() string {
 	return NotFound
 }
 
-type DBErr struct {
-	s string
-
+func NewNotFoundErr(message string) *NotFoundErr {
+	return &NotFoundErr{
+		msg: message,
+	}
 }
+
+type DBErr struct {
+	msg string
+}
+
 func (myErr *DBErr) Error() string {
 	return DBError
 }
 
-type AuthFailedErr struct {
-	s string
-
+func NewDBErr(message string) *DBErr {
+	return &DBErr{
+		msg: message,
+	}
 }
+
+type AuthFailedErr struct {
+	msg string
+}
+
 func (myErr *AuthFailedErr) Error() string {
 	return AuthFailed
 }
 
-type InvalidParamsErr struct {
-	s string
-
+func NewAuthFailedErr(message string) *AuthFailedErr {
+	return &AuthFailedErr{
+		msg: message,
+	}
 }
+
+type InvalidParamsErr struct {
+	msg string
+	Prm map[string]string
+}
+
 func (myErr *InvalidParamsErr) Error() string {
 	return InvalidParams
 }
+
+func NewInvalidParamsErr(params map[string]string) *InvalidParamsErr {
+	return &InvalidParamsErr{
+		Prm: params,
+	}
+}
+
 
