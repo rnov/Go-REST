@@ -31,7 +31,7 @@ type Loggers interface {
 // done
 func NewLogger(log config.LoggerConfig, path string) *logging.Logger {
 
-	// initialice a logger
+	// initialize a logger
 	logger := logging.MustGetLogger(log.Name)
 
 	loggerPath := fmt.Sprintf("%s%s", path, log.File)

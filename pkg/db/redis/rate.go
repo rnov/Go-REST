@@ -2,7 +2,7 @@ package redis
 
 import (
 	"github.com/rnov/Go-REST/pkg/errors"
-	"github.com/rnov/Go-REST/pkg/rates"
+	"github.com/rnov/Go-REST/pkg/rate"
 
 	"strconv"
 	"time"
@@ -16,10 +16,10 @@ const (
 	RedisRecipeRatePattern = "RATE_"
 )
 
-func (rProxy *RedisProxy) RateRecipe(recipeId string, rate *rates.Rate) error {
+func (rProxy *Proxy) RateRecipe(recipeId string, rate *rate.Rate) error {
 
 	// check whether recipe exist
-	exists, err := rProxy.Exists(RedisRecipePattern + recipeId).Result()
+	exists, err := rProxy.master.Exists(RedisRecipePattern + recipeId).Result()
 	if err != nil {
 		return errors.NewDBErr(err.Error())
 	}
@@ -30,7 +30,7 @@ func (rProxy *RedisProxy) RateRecipe(recipeId string, rate *rates.Rate) error {
 
 	// prepare to insert
 	redisFields := mapRateToRedisFields(rate.Note)
-	err = rProxy.HMSet(RedisRecipeRatePattern+recipeId, redisFields).Err()
+	err = rProxy.master.HMSet(RedisRecipeRatePattern+recipeId, redisFields).Err()
 
 	if err != nil {
 		return errors.NewDBErr(err.Error())
@@ -48,9 +48,9 @@ func mapRateToRedisFields(rating int) map[string]interface{} {
 	return mappedData
 }
 
-func (rProxy *RedisProxy) CheckAuthToken(auth string) error {
+func (rProxy *Proxy) CheckAuthToken(auth string) error {
 
-	exist, err := rProxy.Exists(RedisTokenPattern + auth).Result()
+	exist, err := rProxy.master.Exists(RedisTokenPattern + auth).Result()
 	if err != nil {
 		return err
 	}

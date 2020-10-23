@@ -60,6 +60,7 @@ func NewNotFoundErr(message string) *NotFoundErr {
 
 type DBErr struct {
 	msg string
+	msgToLog string
 }
 
 func (myErr *DBErr) Error() string {
@@ -67,6 +68,7 @@ func (myErr *DBErr) Error() string {
 }
 
 func NewDBErr(message string) *DBErr {
+	//message := fmt.Sprintf("error in DB")
 	return &DBErr{
 		msg: message,
 	}
@@ -87,18 +89,16 @@ func NewAuthFailedErr(message string) *AuthFailedErr {
 }
 
 type InvalidParamsErr struct {
-	msg string
-	Prm map[string]string
+	msg        string
+	Parameters map[string]string
 }
 
 func (myErr *InvalidParamsErr) Error() string {
-	return InvalidParams
+	return "invalid parameters"
 }
 
 func NewInvalidParamsErr(params map[string]string) *InvalidParamsErr {
 	return &InvalidParamsErr{
-		Prm: params,
+		Parameters: params,
 	}
 }
-
-

@@ -3,8 +3,8 @@ package main
 import (
 	"github.com/rnov/Go-REST/pkg/db"
 	"github.com/rnov/Go-REST/pkg/http/rest"
-	"github.com/rnov/Go-REST/pkg/rates"
-	"github.com/rnov/Go-REST/pkg/recipes"
+	"github.com/rnov/Go-REST/pkg/rate"
+	"github.com/rnov/Go-REST/pkg/recipe"
 	"net/http"
 
 	"fmt"
@@ -47,12 +47,12 @@ func main() {
 
 	// initialize controllers
 	// In this case recipe and rate share same DB and logger but could be different ones
-	RecipeSrv := recipes.NewRecipeSrv(dbClient, l)
-	RateSrv := rates.NewRateSrv(dbClient, l)
+	RecipeSrv := recipe.NewRecipeSrv(dbClient, l)
+	RateSrv := rate.NewRateSrv(dbClient, l)
 
 	// Create handlers
-	rcpHandler := rest.NewRecipeHandler(*RecipeSrv)
-	rateHandler := rest.NewRateHandler(*RateSrv)
+	rcpHandler := rest.NewRecipeHandler(RecipeSrv)
+	rateHandler := rest.NewRateHandler(RateSrv)
 
 	r := rest.NewRouter(rcpHandler, rateHandler)
 
