@@ -6,9 +6,11 @@ import (
 	"github.com/rnov/Go-REST/pkg/recipe"
 )
 
+const recipePattern = "RECIPE_"
+
 func (rProxy *Proxy) GetRecipeById(recipeId string) (*recipe.Recipe, error) {
 
-	recipeFields, err := rProxy.master.HGetAll(RedisRecipePattern + recipeId).Result()
+	recipeFields, err := rProxy.master.HGetAll(recipePattern + recipeId).Result()
 
 	if err != nil {
 		return nil, err
@@ -29,7 +31,7 @@ func (rProxy *Proxy) GetRecipeById(recipeId string) (*recipe.Recipe, error) {
 
 func (rProxy *Proxy) GetAllRecipes() ([]*recipe.Recipe, error) {
 
-	recipesKeys, err := rProxy.master.Keys(RedisRecipePattern + RedisAllPattern).Result()
+	recipesKeys, err := rProxy.master.Keys(recipePattern + allPattern).Result()
 
 	if err != nil {
 		return nil, err
@@ -56,7 +58,7 @@ func (rProxy *Proxy) GetAllRecipes() ([]*recipe.Recipe, error) {
 
 func (rProxy *Proxy) CreateRecipe(recipe *recipe.Recipe) error {
 
-	exists, err := rProxy.master.Exists(RedisRecipePattern + recipe.ID).Result()
+	exists, err := rProxy.master.Exists(recipePattern + recipe.ID).Result()
 	if err != nil {
 		return errors.NewDBErr(err.Error())
 	}
@@ -66,7 +68,7 @@ func (rProxy *Proxy) CreateRecipe(recipe *recipe.Recipe) error {
 
 	// prepare to insert
 	redisFields := mapRecipeToRedisFields(recipe)
-	_, err = rProxy.master.HMSet(RedisRecipePattern+recipe.ID, redisFields).Result()
+	_, err = rProxy.master.HMSet(recipePattern+recipe.ID, redisFields).Result()
 	if err != nil {
 		return errors.NewDBErr(err.Error())
 	}
@@ -77,7 +79,7 @@ func (rProxy *Proxy) CreateRecipe(recipe *recipe.Recipe) error {
 
 func (rProxy *Proxy) UpdateRecipe(recipe *recipe.Recipe) error {
 
-	exists, err := rProxy.master.Exists(RedisRecipePattern + recipe.ID).Result()
+	exists, err := rProxy.master.Exists(recipePattern + recipe.ID).Result()
 	if err != nil {
 		return errors.NewDBErr(err.Error())
 	}
@@ -87,7 +89,7 @@ func (rProxy *Proxy) UpdateRecipe(recipe *recipe.Recipe) error {
 
 	// prepare to update
 	redisFields := mapRecipeToRedisFields(recipe)
-	err = rProxy.master.HMSet(RedisRecipePattern+recipe.ID, redisFields).Err()
+	err = rProxy.master.HMSet(recipePattern+recipe.ID, redisFields).Err()
 
 	if err != nil {
 		return errors.NewDBErr(err.Error())
@@ -99,15 +101,15 @@ func (rProxy *Proxy) UpdateRecipe(recipe *recipe.Recipe) error {
 func (rProxy *Proxy) DeleteRecipe(recipeId string) error {
 
 	// check whether the recipe has been rated, in that case the rating is also deleted
-	exists, err := rProxy.master.Exists(RedisRecipeRatePattern + recipeId).Result()
+	exists, err := rProxy.master.Exists(ratePattern + recipeId).Result()
 	if err != nil {
 		//return errors.New(msg.DbError)
 		return errors.NewDBErr(err.Error())
 	}
 
 	// note todo implement with multi - redis trasactions - (golang redis as : TxPipelined )
-	result, err := rProxy.master.Del(RedisRecipePattern + recipeId).Result()
-	//result, err := rProxy.Del(RedisRecipePattern + recipeId).Result()
+	result, err := rProxy.master.Del(recipePattern + recipeId).Result()
+	//result, err := rProxy.Del(recipePattern + recipeId).Result()
 	if err != nil {
 		//return errors.New(msg.DbError)
 		return errors.NewDBErr(err.Error())
@@ -119,7 +121,7 @@ func (rProxy *Proxy) DeleteRecipe(recipeId string) error {
 	}
 
 	if exists == 1 {
-		result, err = rProxy.master.Del(RedisRecipePattern + recipeId).Result()
+		result, err = rProxy.master.Del(recipePattern + recipeId).Result()
 		if err != nil {
 			return errors.NewDBErr(err.Error())
 			//return errors.New(msg.DbError)
@@ -140,7 +142,7 @@ func mapToRecipeFromRedis(key string, redisData map[string]string) *recipe.Recip
 	//	return nil
 	//}
 	//result := &recipes.Recipe{
-	//	ID:         strings.TrimPrefix(key, RedisRecipePattern),
+	//	ID:         strings.TrimPrefix(key, recipePattern),
 	//	Name:       redisData[msg.Name],
 	//	PrepTime:   prepTime,
 	//	Difficulty: difficulty,

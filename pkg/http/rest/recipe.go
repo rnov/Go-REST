@@ -3,28 +3,29 @@ package rest
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/julienschmidt/httprouter"
+	log "github.com/rnov/Go-REST/pkg/logger"
 	"github.com/rnov/Go-REST/pkg/recipe"
 	"net/http"
-	"strings"
 )
 
 // interface, could get any controller that implements the interface (redis, mongo, psql ...)
 type RecipeHandler struct {
 	rcpSrv recipe.RcpSrv
+	logger log.Loggers
 	// add a logger ? be able to log at handler level ?? move from service and log in here, good idea ?
 }
 
-func NewRecipeHandler(rcpSrv recipe.RcpSrv) *RecipeHandler {
+func NewRecipeHandler(rcpSrv recipe.RcpSrv, l log.Loggers) *RecipeHandler {
 	recipeHandler := &RecipeHandler{
 		rcpSrv: rcpSrv,
+		logger: l,
 	}
 	return recipeHandler
 }
 
-func (rh *RecipeHandler) GetRecipeById(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
+func (rh *RecipeHandler) GetRecipeById(w http.ResponseWriter, r *http.Request) {
 
-	id := p.ByName("msg.RecipeId")
+	id := r.Header.Get("msg.RecipeId")
 	if len(id) == 0 {
 		w.WriteHeader(http.StatusBadRequest)
 		return
@@ -32,7 +33,7 @@ func (rh *RecipeHandler) GetRecipeById(w http.ResponseWriter, r *http.Request, p
 
 	rcp, err := rh.rcpSrv.GetById(id)
 	if err != nil {
-		buildErrorResponse(w, err)
+		BuildErrorResponse(w, err)
 	}
 
 	// Marshal provided interface into JSON structure
@@ -48,11 +49,11 @@ func (rh *RecipeHandler) GetRecipeById(w http.ResponseWriter, r *http.Request, p
 	fmt.Fprintf(w, "%s", recipeJson)
 }
 
-func (rh *RecipeHandler) GetAllRecipes(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
+func (rh *RecipeHandler) GetAllRecipes(w http.ResponseWriter, r *http.Request) {
 
 	rcps, err := rh.rcpSrv.ListAll()
 	if err != nil {
-		buildErrorResponse(w, err)
+		BuildErrorResponse(w, err)
 	}
 
 	var recipesJson []byte
@@ -65,7 +66,7 @@ func (rh *RecipeHandler) GetAllRecipes(w http.ResponseWriter, r *http.Request, p
 	}
 }
 
-func (rh *RecipeHandler) CreateRecipe(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
+func (rh *RecipeHandler) CreateRecipe(w http.ResponseWriter, r *http.Request) {
 
 	recipe := recipe.Recipe{}
 	err := json.NewDecoder(r.Body).Decode(&recipe)
@@ -75,20 +76,14 @@ func (rh *RecipeHandler) CreateRecipe(w http.ResponseWriter, r *http.Request, p 
 		return
 	}
 
-	auth := r.Header["msg.Authentication"]
-	if len(auth) != 1 {
-		w.WriteHeader(http.StatusUnauthorized)
-		return
-	}
-	auth = strings.Fields(auth[0])
-	if validateAuthStructure(auth) {
-		w.WriteHeader(http.StatusUnauthorized)
-		return
-	}
-
-	rcp, err := rh.rcpSrv.Create(&recipe, auth[1])
+	//auth := r.Header["msg.Authentication"]
+	//if len(auth) != 1 {
+	//	w.WriteHeader(http.StatusUnauthorized)
+	//	return
+	//}
+	rcp, err := rh.rcpSrv.Create(&recipe)
 	if err != nil {
-		buildErrorResponse(w, err)
+		BuildErrorResponse(w, err)
 	}
 
 	body, jsonErr := json.Marshal(rcp)
@@ -99,7 +94,7 @@ func (rh *RecipeHandler) CreateRecipe(w http.ResponseWriter, r *http.Request, p 
 	w.WriteHeader(http.StatusCreated)
 }
 
-func (rh *RecipeHandler) UpdateRecipe(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
+func (rh *RecipeHandler) UpdateRecipe(w http.ResponseWriter, r *http.Request) {
 	recipe := recipe.Recipe{}
 	err := json.NewDecoder(r.Body).Decode(&recipe)
 
@@ -113,47 +108,29 @@ func (rh *RecipeHandler) UpdateRecipe(w http.ResponseWriter, r *http.Request, p 
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	auth = strings.Fields(auth[0])
-	if validateAuthStructure(auth) {
-		w.WriteHeader(http.StatusUnauthorized)
-		return
-	}
-
-	id := p.ByName("msg.RecipeId")
-	if len(id) == 0 {
+	ID := r.Header.Get("msg.RecipeId")
+	if len(ID) == 0 {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
-	err = rh.rcpSrv.Update(&recipe, id, auth[1])
+	err = rh.rcpSrv.Update(&recipe, ID, auth[1])
 	if err != nil {
-		buildErrorResponse(w, err)
+		BuildErrorResponse(w, err)
 	}
 
 	w.WriteHeader(http.StatusOK)
 }
 
-func (rh *RecipeHandler) DeleteRecipe(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
+func (rh *RecipeHandler) DeleteRecipe(w http.ResponseWriter, r *http.Request) {
 
-	id := p.ByName("RecipeId")
-	if len(id) == 0 {
+	ID := r.Header.Get("RecipeId")
+	if len(ID) == 0 {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-
-	auth := r.Header["Authentication"]
-	if len(auth) != 1 {
-		w.WriteHeader(http.StatusUnauthorized)
-		return
-	}
-	auth = strings.Fields(auth[0])
-	if validateAuthStructure(auth) {
-		w.WriteHeader(http.StatusUnauthorized)
-		return
-	}
-
-	if err := rh.rcpSrv.Delete(id, auth[1]); err != nil {
-		buildErrorResponse(w, err)
+	if err := rh.rcpSrv.Delete(ID); err != nil {
+		BuildErrorResponse(w, err)
 		return
 	}
 

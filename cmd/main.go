@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/rnov/Go-REST/pkg/auth"
 	"github.com/rnov/Go-REST/pkg/db"
 	"github.com/rnov/Go-REST/pkg/http/rest"
 	"github.com/rnov/Go-REST/pkg/rate"
@@ -45,16 +46,19 @@ func main() {
 		log.Fatal(err.Error())
 	}
 
+	// get auth accessor
+	authorization := auth.NewAuth(dbClient)
+
 	// initialize controllers
 	// In this case recipe and rate share same DB and logger but could be different ones
-	RecipeSrv := recipe.NewRecipeSrv(dbClient, l)
-	RateSrv := rate.NewRateSrv(dbClient, l)
+	RecipeSrv := recipe.NewRecipeSrv(dbClient)
+	RateSrv := rate.NewRateSrv(dbClient)
 
 	// Create handlers
-	rcpHandler := rest.NewRecipeHandler(RecipeSrv)
-	rateHandler := rest.NewRateHandler(RateSrv)
+	rcpHandler := rest.NewRecipeHandler(RecipeSrv, l)
+	rateHandler := rest.NewRateHandler(RateSrv, l)
 
-	r := rest.NewRouter(rcpHandler, rateHandler)
+	r := rest.NewRouter(rcpHandler, rateHandler, authorization)
 
 	// Fire up the server
 	log.Fatal(http.ListenAndServe(cfg.Server.Address, r))

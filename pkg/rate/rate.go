@@ -3,7 +3,6 @@ package rate
 import (
 	"github.com/rnov/Go-REST/pkg/db"
 	"github.com/rnov/Go-REST/pkg/errors"
-	log "github.com/rnov/Go-REST/pkg/logger"
 )
 
 type Rate struct {
@@ -16,14 +15,12 @@ type Rater interface {
 
 type Service struct {
 	rateDb db.RateDbCalls
-	// add more func fields
-	logger log.Loggers
+	//// add more func fields - there used to be a logger-
 }
 
-func NewRateSrv(rateDb db.RateDbCalls, logger log.Loggers) *Service {
+func NewRateSrv(rateDb db.RateDbCalls) *Service {
 	rateSrv := &Service{
 		rateDb: rateDb,
-		logger: logger,
 	}
 	return rateSrv
 }

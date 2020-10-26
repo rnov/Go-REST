@@ -8,7 +8,6 @@ import (
 )
 
 type RecipesDbCalls interface {
-	CheckAuthToken(auth string) error
 	GetRecipeById(recipeId string) (*rcp.Recipe, error)
 	GetAllRecipes() ([]*rcp.Recipe, error)
 	CreateRecipe(recipe *rcp.Recipe) error
@@ -17,13 +16,17 @@ type RecipesDbCalls interface {
 }
 
 type RateDbCalls interface {
-	CheckAuthToken(auth string) error
 	RateRecipe(recipeId string, rate *rate.Rate) error
+}
+
+type AuthDb interface {
+	CheckAuth(auth string) error
 }
 
 type Client interface {
 	RecipesDbCalls
 	RateDbCalls
+	AuthDb
 }
 
 func NewDbClient(t string) (Client, error) {

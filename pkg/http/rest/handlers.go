@@ -2,52 +2,51 @@ package rest
 
 import (
 	"encoding/json"
-	"github.com/julienschmidt/httprouter"
+	"github.com/gorilla/mux"
+	"github.com/rnov/Go-REST/pkg/auth"
 	"github.com/rnov/Go-REST/pkg/errors"
+	mid "github.com/rnov/Go-REST/pkg/http/middleware"
 	"net/http"
 )
 
 type RecipeAPI interface {
-	GetRecipeById(w http.ResponseWriter, r *http.Request, p httprouter.Params)
-	GetAllRecipes(w http.ResponseWriter, r *http.Request, p httprouter.Params)
-	CreateRecipe(w http.ResponseWriter, r *http.Request, p httprouter.Params)
-	UpdateRecipe(w http.ResponseWriter, r *http.Request, p httprouter.Params)
-	DeleteRecipe(w http.ResponseWriter, r *http.Request, p httprouter.Params)
+	GetRecipeById(w http.ResponseWriter, r *http.Request)
+	GetAllRecipes(w http.ResponseWriter, r *http.Request)
+	CreateRecipe(w http.ResponseWriter, r *http.Request)
+	UpdateRecipe(w http.ResponseWriter, r *http.Request)
+	DeleteRecipe(w http.ResponseWriter, r *http.Request)
 }
 
 type RateAPI interface {
-	RateRecipe(w http.ResponseWriter, r *http.Request, p httprouter.Params)
+	RateRecipe(w http.ResponseWriter, r *http.Request)
 }
 
-func NewRouter(rcpHand *RecipeHandler, rateHand *RateHandler) *httprouter.Router {
-	ApiRestRouter := &httprouter.Router{}
-	configRecipeEndpoints(ApiRestRouter, rcpHand)
+func NewRouter(rcpHand *RecipeHandler, rateHand *RateHandler, auth *auth.Auth) *mux.Router {
+	ApiRestRouter := mux.NewRouter()
+	configRecipeEndpoints(ApiRestRouter, rcpHand, auth)
 	configRateEndPoints(ApiRestRouter, rateHand)
 
 	return ApiRestRouter
 }
 
 // note private functions needed to configure route's endpoints, used in NewRouter
-func configRecipeEndpoints(router *httprouter.Router, rcpHand *RecipeHandler) {
-	router.GET("/recipes/:id", rcpHand.GetRecipeById)
-	router.GET("/recipes", rcpHand.GetAllRecipes)
-	router.DELETE("/recipes/:id", rcpHand.DeleteRecipe)
-	router.POST("/recipes", rcpHand.CreateRecipe)
-	router.PUT("/recipes/:id", rcpHand.UpdateRecipe)
+func configRecipeEndpoints(r *mux.Router, rcpHand *RecipeHandler, auth *auth.Auth) {
+
+	r.HandleFunc("/recipes/{id}", rcpHand.GetRecipeById).Methods("GET")
+	r.HandleFunc("/recipes", rcpHand.GetAllRecipes).Methods("GET")
+	r.HandleFunc("/recipes/{id}", mid.Authentication(auth, rcpHand.DeleteRecipe)).Methods("DELETE")
+	r.HandleFunc("/recipes", mid.Authentication(auth, rcpHand.CreateRecipe)).Methods("POST")
+	r.HandleFunc("/recipes/{id}", mid.Authentication(auth, rcpHand.UpdateRecipe)).Methods("PUT")
 }
 
-func configRateEndPoints(router *httprouter.Router, rateHand *RateHandler) {
-	router.POST("/recipes/:id/rating", rateHand.RateRecipe)
+func configRateEndPoints(r *mux.Router, rateHand *RateHandler) {
+	r.HandleFunc("/recipes/{id}/rating", rateHand.RateRecipe).Methods("POST")
 }
 
-func validateAuthStructure(auth []string) bool {
-	return len(auth) != 2 || auth[0] != "msg.Bearer"
-}
-
-func buildErrorResponse(w http.ResponseWriter, err error) {
+func BuildErrorResponse(w http.ResponseWriter, err error) {
 
 	switch e := err.(type) {
-	case *errors.AuthFailedErr:
+	case *errors.FailedAuthErr:
 		w.WriteHeader(http.StatusUnauthorized)
 	case *errors.DBErr:
 		//http.Error(http.StatusInternalServerError, ,)

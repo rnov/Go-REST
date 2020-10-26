@@ -2,41 +2,39 @@ package rest
 
 import (
 	"encoding/json"
-	"github.com/julienschmidt/httprouter"
+	log "github.com/rnov/Go-REST/pkg/logger"
 	"github.com/rnov/Go-REST/pkg/rate"
 	"net/http"
 )
 
 type RateHandler struct {
-	srv rate.Rater
+	srv    rate.Rater
+	logger log.Loggers
 }
 
-func NewRateHandler(srv rate.Rater) *RateHandler {
+func NewRateHandler(srv rate.Rater, l log.Loggers) *RateHandler {
 	rateHandler := &RateHandler{
-		srv: srv,
+		srv:    srv,
+		logger: l,
 	}
 	return rateHandler
 }
 
-func (rh *RateHandler) RateRecipe(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
+func (rh *RateHandler) RateRecipe(w http.ResponseWriter, r *http.Request) {
 
-	id := p.ByName("id")
-	if len(id) == 0 {
-		w.WriteHeader(400)
+	ID := r.Header.Get("ID")
+	if len(ID) == 0 {
+		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-
 	rating := &rate.Rate{}
-	err := json.NewDecoder(r.Body).Decode(&rating)
-
-	if err != nil {
-		w.WriteHeader(404)
+	if err := json.NewDecoder(r.Body).Decode(&rating); err != nil {
+		w.WriteHeader(http.StatusNotFound)
 		return
 	}
-
-	if err = rh.srv.Rate(id, rating); err != nil{
-		buildErrorResponse(w, err)
+	if err := rh.srv.Rate(ID, rating); err != nil {
+		BuildErrorResponse(w, err)
 	}
 
-	w.WriteHeader(200)
+	w.WriteHeader(http.StatusOK)
 }

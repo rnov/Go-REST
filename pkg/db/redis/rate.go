@@ -9,17 +9,14 @@ import (
 )
 
 const (
-	RedisAllPattern        = "*"
-	RedisRecipePattern     = "RECIPE_"
-	RedisTokenPattern      = "TOKEN_"
-	RedisTrue              = "True"
-	RedisRecipeRatePattern = "RATE_"
+	allPattern    = "*"
+	ratePattern   = "RATE_"
 )
 
 func (rProxy *Proxy) RateRecipe(recipeId string, rate *rate.Rate) error {
 
 	// check whether recipe exist
-	exists, err := rProxy.master.Exists(RedisRecipePattern + recipeId).Result()
+	exists, err := rProxy.master.Exists(recipePattern + recipeId).Result()
 	if err != nil {
 		return errors.NewDBErr(err.Error())
 	}
@@ -30,7 +27,7 @@ func (rProxy *Proxy) RateRecipe(recipeId string, rate *rate.Rate) error {
 
 	// prepare to insert
 	redisFields := mapRateToRedisFields(rate.Note)
-	err = rProxy.master.HMSet(RedisRecipeRatePattern+recipeId, redisFields).Err()
+	err = rProxy.master.HMSet(ratePattern+recipeId, redisFields).Err()
 
 	if err != nil {
 		return errors.NewDBErr(err.Error())
@@ -46,17 +43,4 @@ func mapRateToRedisFields(rating int) map[string]interface{} {
 	mappedData[key] = rating
 
 	return mappedData
-}
-
-func (rProxy *Proxy) CheckAuthToken(auth string) error {
-
-	exist, err := rProxy.master.Exists(RedisTokenPattern + auth).Result()
-	if err != nil {
-		return err
-	}
-	if exist == 0 {
-		return errors.NewAuthFailedErr("")
-	}
-
-	return nil
 }

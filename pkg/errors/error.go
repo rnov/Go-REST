@@ -74,16 +74,16 @@ func NewDBErr(message string) *DBErr {
 	}
 }
 
-type AuthFailedErr struct {
+type FailedAuthErr struct {
 	msg string
 }
 
-func (myErr *AuthFailedErr) Error() string {
+func (myErr *FailedAuthErr) Error() string {
 	return AuthFailed
 }
 
-func NewAuthFailedErr(message string) *AuthFailedErr {
-	return &AuthFailedErr{
+func NewFailedAuthErr(message string) *FailedAuthErr {
+	return &FailedAuthErr{
 		msg: message,
 	}
 }
