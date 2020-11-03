@@ -2,7 +2,7 @@ package middleware
 
 import (
 	"github.com/rnov/Go-REST/pkg/auth"
-	"github.com/rnov/Go-REST/pkg/http/rest"
+	"github.com/rnov/Go-REST/pkg/errors"
 	"net/http"
 )
 
@@ -21,7 +21,7 @@ func Authentication(auth *auth.Auth, next func(http.ResponseWriter, *http.Reques
 		}
 		basicAuth := ah[1]
 		if err := auth.Validate(basicAuth); err != nil {
-			rest.BuildErrorResponse(w, err)
+			errors.BuildErrorResponse(w, err)
 			return
 		}
 		next(w, r)

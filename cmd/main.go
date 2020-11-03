@@ -4,8 +4,7 @@ import (
 	"github.com/rnov/Go-REST/pkg/auth"
 	"github.com/rnov/Go-REST/pkg/db"
 	"github.com/rnov/Go-REST/pkg/http/rest"
-	"github.com/rnov/Go-REST/pkg/rate"
-	"github.com/rnov/Go-REST/pkg/recipe"
+	"github.com/rnov/Go-REST/pkg/service"
 	"net/http"
 
 	"fmt"
@@ -37,11 +36,12 @@ func main() {
 	}
 
 	// create RecipeSrv custom logger
-	l := logger.NewLogger(cfg.RedisLog, cfg.LogsPath)
+	//l := logger.NewLogger(cfg.RedisLog, cfg.LogsPath)
+	l := logger.NewLogger()
 	fmt.Sprint(l)
 
-	// fixme actually the param should be config struct with some data like host, port etc ...
-	dbClient, err := db.NewDbClient("redis")
+	// create DB client
+	dbClient, err := db.NewDbClient(cfg.DBCfg)
 	if err != nil {
 		log.Fatal(err.Error())
 	}
@@ -51,8 +51,8 @@ func main() {
 
 	// initialize controllers
 	// In this case recipe and rate share same DB and logger but could be different ones
-	RecipeSrv := recipe.NewRecipeSrv(dbClient)
-	RateSrv := rate.NewRateSrv(dbClient)
+	RecipeSrv := service.NewRecipe(dbClient)
+	RateSrv := service.NewRate(dbClient)
 
 	// Create handlers
 	rcpHandler := rest.NewRecipeHandler(RecipeSrv, l)

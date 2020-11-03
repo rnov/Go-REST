@@ -1,13 +1,14 @@
 package db
 
 import (
+	"github.com/rnov/Go-REST/pkg/config"
 	"github.com/rnov/Go-REST/pkg/db/redis"
 	"github.com/rnov/Go-REST/pkg/errors"
 	"github.com/rnov/Go-REST/pkg/rate"
 	rcp "github.com/rnov/Go-REST/pkg/recipe"
 )
 
-type RecipesDbCalls interface {
+type Recipe interface {
 	GetRecipeById(recipeId string) (*rcp.Recipe, error)
 	GetAllRecipes() ([]*rcp.Recipe, error)
 	CreateRecipe(recipe *rcp.Recipe) error
@@ -15,26 +16,26 @@ type RecipesDbCalls interface {
 	DeleteRecipe(recipeId string) error
 }
 
-type RateDbCalls interface {
+type Rate interface {
 	RateRecipe(recipeId string, rate *rate.Rate) error
 }
 
-type AuthDb interface {
+type Auth interface {
 	CheckAuth(auth string) error
 }
 
 type Client interface {
-	RecipesDbCalls
-	RateDbCalls
-	AuthDb
+	Recipe
+	Rate
+	Auth
 }
 
-func NewDbClient(t string) (Client, error) {
+func NewDbClient(cfg config.DBConfig) (Client, error) {
 
-	switch t {
+	switch cfg.Type {
 	case "redis":
 		// note: check ping pong etc - consult main
-		redisClient := redis.NewRedisClient("host", 8080, 1)
+		redisClient := redis.NewRedisClient(cfg.Host, cfg.Port, cfg.Db)
 		//check connection with redis
 		if _, err := redisClient.Ping().Result(); err != nil {
 			return nil, err

@@ -8,10 +8,10 @@ import (
 )
 
 type Auth struct {
-	Db db.AuthDb
+	Db db.Auth
 }
 
-func NewAuth(db db.AuthDb) *Auth {
+func NewAuth(db db.Auth) *Auth {
 	return &Auth{
 		Db: db,
 	}

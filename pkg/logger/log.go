@@ -1,8 +1,6 @@
 package logger
 
 import (
-	"fmt"
-	"github.com/rnov/Go-REST/pkg/config"
 	"os"
 
 	"github.com/op/go-logging"
@@ -28,30 +26,42 @@ type Loggers interface {
 	Debugf(format string, args ...interface{})
 }
 
-// done
-func NewLogger(log config.LoggerConfig, path string) *logging.Logger {
+// fixme whether we want to dump the logs into a file ...
+//func NewLogger(log config.LoggerConfig, path string) *logging.Logger {
+func NewLogger() *logging.Logger {
 
 	// initialize a logger
-	logger := logging.MustGetLogger(log.Name)
+	logger := logging.MustGetLogger("goREST")
+	//logger := logging.MustGetLogger(log.Name)
 
-	loggerPath := fmt.Sprintf("%s%s", path, log.File)
-	logFile, err := os.OpenFile(loggerPath, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0644)
+	//loggerPath := fmt.Sprintf("%s%s", path, log.File)
+	//logFile, err := os.OpenFile(loggerPath, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0644)
 
-	if err != nil {
-		panic(err)
-	}
+	//if err != nil {
+	//	panic(err)
+	//}
 
 	var format = logging.MustStringFormatter(
-		`%{color}%{time:15:04:05.000} %{shortfunc} ▶ %{level:.4s} %{id:03x}%{color:reset} %{errors}`,
+		`%{color}%{time:15:04:05.000} %{shortfunc} ▶ %{level:.4s} %{id:03x}%{color:reset} %{message}`,
 	)
 
-	backend := logging.NewLogBackend(logFile, "", 0)
-	backendFormatter := logging.NewBackendFormatter(backend, format)
+	// set error backend
+	backendError := logging.NewLogBackend(os.Stderr, "", 0)
+	//backendError := logging.NewLogBackend(logFile, "", 0)
+	backendFormatter := logging.NewBackendFormatter(backendError, format)
 
-	backendLeveled := logging.AddModuleLevel(backend)
-	backendLeveled.SetLevel(logging.ERROR, "")
+	backendLeveledError := logging.AddModuleLevel(backendError)
+	backendLeveledError.SetLevel(logging.ERROR, "")
 
-	logging.SetBackend(backendLeveled, backendFormatter)
+	// set info backend
+	backendInfo := logging.NewLogBackend(os.Stdout, "", 0)
+	//backendError := logging.NewLogBackend(logFile, "", 0)
+	backendFormatter = logging.NewBackendFormatter(backendInfo, format)
+
+	backendLeveledInfo := logging.AddModuleLevel(backendInfo)
+	backendLeveledInfo.SetLevel(logging.INFO, "")
+
+	logging.SetBackend(backendLeveledInfo, backendFormatter)
 
 	return logger
 }

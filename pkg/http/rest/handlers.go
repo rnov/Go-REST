@@ -1,10 +1,8 @@
 package rest
 
 import (
-	"encoding/json"
 	"github.com/gorilla/mux"
 	"github.com/rnov/Go-REST/pkg/auth"
-	"github.com/rnov/Go-REST/pkg/errors"
 	mid "github.com/rnov/Go-REST/pkg/http/middleware"
 	"net/http"
 )
@@ -43,23 +41,4 @@ func configRateEndPoints(r *mux.Router, rateHand *RateHandler) {
 	r.HandleFunc("/recipes/{id}/rating", rateHand.RateRecipe).Methods("POST")
 }
 
-func BuildErrorResponse(w http.ResponseWriter, err error) {
 
-	switch e := err.(type) {
-	case *errors.FailedAuthErr:
-		w.WriteHeader(http.StatusUnauthorized)
-	case *errors.DBErr:
-		//http.Error(http.StatusInternalServerError, ,)
-		w.WriteHeader(http.StatusInternalServerError)
-	case *errors.NotFoundErr:
-		w.WriteHeader(http.StatusNotFound)
-	case *errors.InvalidParamsErr:
-		body, jsonErr := json.Marshal(e.Parameters)
-		if _, parseErr := w.Write(body); jsonErr != nil || parseErr != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusBadRequest)
-	}
-}

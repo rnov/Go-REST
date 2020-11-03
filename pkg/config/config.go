@@ -25,7 +25,8 @@ func LoadApiConfig(confPath string) (ApiConfig, error) {
 	return config, nil
 }
 
-type RedisConfig struct {
+type DBConfig struct {
+	Type string `yaml:"type"`
 	Host string `yaml:"host"`
 	Port int    `yaml:"port"`
 	Db   int    `yaml:"dbInterface"`
@@ -38,10 +39,10 @@ type LoggerConfig struct {
 }
 
 type ApiConfig struct {
-	Server   Server        `yaml:"server"`
-	Redis    []RedisConfig `yaml:"redis"`
-	LogsPath string        `yaml:"loggers_paths"`
-	RedisLog LoggerConfig  `yaml:"redis_logger"`
+	Server   Server       `yaml:"server"`
+	DBCfg    DBConfig     `yaml:"dbConfig"`
+	LogsPath string       `yaml:"loggers_paths"`
+	RedisLog LoggerConfig `yaml:"redis_logger"`
 	//	... api, postgres, logger ...
 }
 
