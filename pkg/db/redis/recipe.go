@@ -9,24 +9,20 @@ import (
 const recipePattern = "RECIPE_"
 
 func (rProxy *Proxy) GetRecipeById(recipeId string) (*recipe.Recipe, error) {
-
 	recipeFields, err := rProxy.master.HGetAll(recipePattern + recipeId).Result()
-
 	if err != nil {
 		return nil, err
 	}
-
 	if len(recipeFields) == 0 {
 		return nil, errors.NewExistErr(fmt.Sprintf("Does not exist Recipe with ID : %s" + recipeId))
 	}
 
-	recipe := mapToRecipeFromRedis(recipeId, recipeFields)
-	if recipe == nil {
-		return nil, errors.NewExistErr(fmt.Sprint("error parsing int from redis"))
+	rcp := mapToRecipeFromRedis(recipeId, recipeFields)
+	if rcp == nil {
+		return nil, errors.NewDBErr(fmt.Sprint("error parsing recipe from redis"))
 	}
 
-	return recipe, nil
-
+	return rcp, nil
 }
 
 func (rProxy *Proxy) GetAllRecipes() ([]*recipe.Recipe, error) {
@@ -46,8 +42,7 @@ func (rProxy *Proxy) GetAllRecipes() ([]*recipe.Recipe, error) {
 
 		recipe := mapToRecipeFromRedis(key, redisRcp)
 		if recipe == nil {
-			return nil, errors.NewDBErr("error parsing int from redis")
-			//return nil, errors.New("error parsing int from redis")
+			return nil, errors.NewDBErr("error parsing rcp from redis")
 		}
 		recipes = append(recipes, recipe)
 	}
@@ -84,7 +79,7 @@ func (rProxy *Proxy) UpdateRecipe(recipe *recipe.Recipe) error {
 		return errors.NewDBErr(err.Error())
 	}
 	if exists == 0 {
-		return errors.NewExistErr("")
+		return errors.NewExistErr(fmt.Sprintf("recipe with ID %s does not exist", recipe.ID))
 	}
 
 	// prepare to update
@@ -109,14 +104,11 @@ func (rProxy *Proxy) DeleteRecipe(recipeId string) error {
 
 	// note todo implement with multi - redis trasactions - (golang redis as : TxPipelined )
 	result, err := rProxy.master.Del(recipePattern + recipeId).Result()
-	//result, err := rProxy.Del(recipePattern + recipeId).Result()
 	if err != nil {
-		//return errors.New(msg.DbError)
 		return errors.NewDBErr(err.Error())
 	}
 
 	if result == 0 {
-		//return errors.New(msg.NotFound)
 		return errors.NewExistErr("")
 	}
 

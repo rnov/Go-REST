@@ -43,7 +43,7 @@ func (rh *RateHandler) RateRecipe(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusNotFound)
 	}
 	if err := rh.srv.Rate(ID, rating); err != nil {
-		errors.BuildErrorResponse(w, err)
+		errors.BuildResponse(w, err)
 	}
 
 	w.WriteHeader(http.StatusOK)

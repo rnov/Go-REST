@@ -4,24 +4,26 @@ import (
 	"bytes"
 	"encoding/json"
 	"github.com/gorilla/mux"
+	"github.com/rnov/Go-REST/pkg/errors"
 	"github.com/rnov/Go-REST/pkg/logger"
 	r "github.com/rnov/Go-REST/pkg/recipe"
 	"net/http"
 	"net/http/httptest"
+	"reflect"
 	"testing"
 )
 
 type RecipeServiceMock struct {
-	getById func(recipeId string) (*r.Recipe, error)
+	getByID func(recipeID string) (*r.Recipe, error)
 	listAll func() ([]*r.Recipe, error)
-	create  func(recipe *r.Recipe) (*r.Recipe, error)
-	update  func(recipe *r.Recipe) error
-	delete  func(recipeId string) error
+	create  func(recipe *r.Recipe) error
+	update  func(ID string, recipe *r.Recipe) error
+	delete  func(recipeID string) error
 }
 
-func (rsm RecipeServiceMock) GetById(recipeId string) (*r.Recipe, error) {
-	if rsm.getById != nil {
-		return rsm.getById(recipeId)
+func (rsm RecipeServiceMock) GetByID(recipeID string) (*r.Recipe, error) {
+	if rsm.getByID != nil {
+		return rsm.getByID(recipeID)
 	}
 	panic("Not implemented")
 }
@@ -33,38 +35,78 @@ func (rsm RecipeServiceMock) ListAll() ([]*r.Recipe, error) {
 	panic("Not implemented")
 }
 
-func (rsm RecipeServiceMock) Create(recipe *r.Recipe) (*r.Recipe, error) {
+func (rsm RecipeServiceMock) Create(recipe *r.Recipe) error {
 	if rsm.create != nil {
 		return rsm.create(recipe)
 	}
 	panic("Not implemented")
 }
 
-func (rsm RecipeServiceMock) Update(recipe *r.Recipe) error {
+func (rsm RecipeServiceMock) Update(ID string, recipe *r.Recipe) error {
 	if rsm.create != nil {
-		return rsm.update(recipe)
+		return rsm.update(ID, recipe)
 	}
 	panic("Not implemented")
 }
 
-func (rsm RecipeServiceMock) Delete(recipeId string) error {
+func (rsm RecipeServiceMock) Delete(recipeID string) error {
 	if rsm.delete != nil {
-		return rsm.delete(recipeId)
+		return rsm.delete(recipeID)
 	}
 	panic("Not implemented")
 }
 
-func TestRecipeHandler_GetRecipeById(t *testing.T) {
+func TestRecipeHandler_GetRecipeByID(t *testing.T) {
 	tests := []struct {
-		name         string
-		url          string
-		payload      interface{}
-		service      RecipeServiceMock
-		status       int
-		checkPayload func(payload string) error
+		name            string
+		url             string
+		service         RecipeServiceMock
+		status          int
+		expectedPayload *r.Recipe
 	}{
-		// todo
-		{},
+		{
+			name: "Successful request",
+			url:  "/recipes/5f10223c",
+			service: RecipeServiceMock{
+				getByID: func(recipeID string) (*r.Recipe, error) {
+					return &r.Recipe{
+						ID:         "5f10223c",
+						Name:       "qwerty",
+						PrepTime:   20,
+						Difficulty: 3,
+						Vegetarian: false,
+					}, nil
+				},
+			},
+			status: 200,
+			expectedPayload: &r.Recipe{
+				ID:         "5f10223c",
+				Name:       "qwerty",
+				PrepTime:   20,
+				Difficulty: 3,
+				Vegetarian: false,
+			},
+		},
+		{
+			name: "error getting recipe ID - out of scope",
+			url:  "/recipes/0123456789xyz",
+			service: RecipeServiceMock{
+				getByID: func(recipeID string) (*r.Recipe, error) {
+					return nil, errors.NewUserErr("invalid ID format")
+				},
+			},
+			status: 400,
+		},
+		{
+			name: "error - recipe not found ",
+			url:  "/recipes/5f10223c",
+			service: RecipeServiceMock{
+				getByID: func(recipeID string) (*r.Recipe, error) {
+					return nil, errors.NewNotFoundErr()
+				},
+			},
+			status: 404,
+		},
 	}
 
 	for _, test := range tests {
@@ -81,7 +123,7 @@ func TestRecipeHandler_GetRecipeById(t *testing.T) {
 			// We create a ResponseRecorder (which satisfies http.ResponseWriter) to record the response.
 			rr := httptest.NewRecorder()
 			servicesRouter := mux.NewRouter()
-			servicesRouter.HandleFunc("/recipes/{id}", rh.GetRecipeById).Methods("GET")
+			servicesRouter.HandleFunc("/recipes/{ID}", rh.GetRecipeByID).Methods("GET")
 
 			// Our handlers satisfy http.Handler, so we can call their ServeHTTP method
 			// directly and pass in our Request and ResponseRecorder.
@@ -92,27 +134,89 @@ func TestRecipeHandler_GetRecipeById(t *testing.T) {
 				t.Errorf("handler returned wrong status code: expected %v got %v", test.status, rr.Code)
 			}
 
-			if test.checkPayload != nil {
-				if err := test.checkPayload(rr.Body.String()); err != nil {
-					t.Errorf("error validation payload: %w", err)
+			if test.expectedPayload != nil {
+				rcp := &r.Recipe{}
+				_ = json.Unmarshal(rr.Body.Bytes(), rcp)
+				if !reflect.DeepEqual(test.expectedPayload, rcp) {
+					t.Errorf("expected: '%v' instead got: '%v'", test.expectedPayload, rcp)
 				}
 			}
-
 		})
 	}
 }
 
 func TestRecipeHandler_GetAllRecipes(t *testing.T) {
 	tests := []struct {
-		name         string
-		url          string
-		payload      interface{}
-		service      RecipeServiceMock
-		status       int
-		checkPayload func(payload string) error
+		name            string
+		url             string
+		service         RecipeServiceMock
+		status          int
+		expectedPayload []*r.Recipe
 	}{
-		// todo
-		{},
+		{
+			name: "successful request - multiple results",
+			url:  "/recipes",
+			service: RecipeServiceMock{
+				listAll: func() ([]*r.Recipe, error) {
+					return []*r.Recipe{
+						{
+
+							ID:         "5f10223c",
+							Name:       "qwerty",
+							PrepTime:   20,
+							Difficulty: 3,
+							Vegetarian: false,
+						},
+						{
+							ID:         "c32201f5",
+							Name:       "ytrewq",
+							PrepTime:   25,
+							Difficulty: 5,
+							Vegetarian: false,
+						},
+					}, nil
+				},
+			},
+			status: 200,
+			expectedPayload: []*r.Recipe{
+				{
+
+					ID:         "5f10223c",
+					Name:       "qwerty",
+					PrepTime:   20,
+					Difficulty: 3,
+					Vegetarian: false,
+				},
+				{
+					ID:         "c32201f5",
+					Name:       "ytrewq",
+					PrepTime:   25,
+					Difficulty: 5,
+					Vegetarian: false,
+				},
+			},
+		},
+		{
+			name: "successful request - empty result",
+			url:  "/recipes",
+			service: RecipeServiceMock{
+				listAll: func() ([]*r.Recipe, error) {
+					return []*r.Recipe{}, nil
+				},
+			},
+			status:          200,
+			expectedPayload: nil,
+		},
+		{
+			name: "error - system failure",
+			url:  "/recipes",
+			service: RecipeServiceMock{
+				listAll: func() ([]*r.Recipe, error) {
+					return nil, errors.NewDBErr("system failure")
+				},
+			},
+			status: 500,
+		},
 	}
 
 	for _, test := range tests {
@@ -140,34 +244,89 @@ func TestRecipeHandler_GetAllRecipes(t *testing.T) {
 				t.Errorf("handler returned wrong status code: expected %v got %v", test.status, rr.Code)
 			}
 
-			if test.checkPayload != nil {
-				if err := test.checkPayload(rr.Body.String()); err != nil {
-					t.Errorf("error validation payload: %w", err)
+			if test.expectedPayload != nil {
+				rcps := make([]*r.Recipe, 0)
+				_ = json.Unmarshal(rr.Body.Bytes(), &rcps)
+				if !reflect.DeepEqual(test.expectedPayload, rcps) {
+					t.Errorf("payload values do not match")
 				}
 			}
-
 		})
 	}
 }
 
 func TestRecipeHandler_CreateRecipe(t *testing.T) {
 	tests := []struct {
-		name         string
-		url          string
-		payload      interface{}
-		service      RecipeServiceMock
-		status       int
-		checkPayload func(payload string) error
+		name            string
+		url             string
+		requestPayload  *r.Recipe
+		service         RecipeServiceMock
+		status          int
+		expectedPayload *r.Recipe
 	}{
-		// todo
-		{},
+		{
+			name: "Successful request",
+			url:  "/recipes",
+			requestPayload: &r.Recipe{
+				ID:         "5f10223c",
+				Name:       "qwerty",
+				PrepTime:   20,
+				Difficulty: 3,
+				Vegetarian: false,
+			},
+			service: RecipeServiceMock{
+				create: func(recipe *r.Recipe) error {
+					return nil
+				},
+			},
+			status: 201,
+			expectedPayload: &r.Recipe{
+				ID:         "5f10223c",
+				Name:       "qwerty",
+				PrepTime:   20,
+				Difficulty: 3,
+				Vegetarian: false,
+			},
+		},
+		{
+			name: "error - invalid recipe params ",
+			url:  "/recipes",
+			requestPayload: &r.Recipe{
+				ID:         "5f10223c",
+				Name:       "qwerty",
+				PrepTime:   20,
+				Difficulty: 100,
+				Vegetarian: false,
+			},
+			service: RecipeServiceMock{
+				create: func(recipe *r.Recipe) error {
+					return errors.NewInvalidParamsErr(map[string]string{errors.Rate: errors.OutOfRange})
+				},
+			},
+			status: 400,
+		},
+		{
+			name:   "error special case incoming body is not a recipe - error unmarshal",
+			url:    "/recipes",
+			status: 400,
+		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 
 			l := logger.NewLogger()
-			jsonBody, _ := json.Marshal(test.payload)
+			var jsonBody []byte
+			if test.requestPayload == nil {
+				invalidBody := struct {
+					Age int `json:"age"`
+				}{
+					Age: 100,
+				}
+				jsonBody, _ = json.Marshal(&invalidBody)
+			} else {
+				jsonBody, _ = json.Marshal(test.requestPayload)
+			}
 			req, err := http.NewRequest("POST", test.url, bytes.NewBuffer(jsonBody))
 			if err != nil {
 				t.Fatal(err)
@@ -189,9 +348,11 @@ func TestRecipeHandler_CreateRecipe(t *testing.T) {
 				t.Errorf("handler returned wrong status code: expected %v got %v", test.status, rr.Code)
 			}
 
-			if test.checkPayload != nil {
-				if err := test.checkPayload(rr.Body.String()); err != nil {
-					t.Errorf("error validation payload: %w", err)
+			if test.expectedPayload != nil {
+				rcp := &r.Recipe{}
+				_ = json.Unmarshal(rr.Body.Bytes(), rcp)
+				if !reflect.DeepEqual(test.expectedPayload, rcp) {
+					t.Errorf("expected: '%v' instead got: '%v'", test.expectedPayload, rcp)
 				}
 			}
 		})
@@ -200,22 +361,85 @@ func TestRecipeHandler_CreateRecipe(t *testing.T) {
 
 func TestRecipeHandler_UpdateRecipe(t *testing.T) {
 	tests := []struct {
-		name         string
-		url          string
-		payload      interface{}
-		service      RecipeServiceMock
-		status       int
-		checkPayload func(payload string) error
+		name            string
+		url             string
+		requestPayload  *r.Recipe
+		service         RecipeServiceMock
+		status          int
+		expectedPayload *r.Recipe
 	}{
-		// todo
-		{},
+		{
+			name: "Successful request",
+			url:  "/recipes",
+			requestPayload: &r.Recipe{
+				ID:         "5f10223c",
+				Name:       "qwerty",
+				PrepTime:   20,
+				Difficulty: 3,
+				Vegetarian: false,
+			},
+			service: RecipeServiceMock{
+				update: func(ID string, recipe *r.Recipe) error {
+					return nil
+				},
+			},
+			status: 200,
+			expectedPayload: &r.Recipe{
+				ID:         "5f10223c",
+				Name:       "qwerty",
+				PrepTime:   20,
+				Difficulty: 3,
+				Vegetarian: false,
+			},
+		},
+		{
+			name: "error - invalid recipe params ",
+			url:  "/recipes/5f10223c",
+			requestPayload: &r.Recipe{
+				ID:         "5f10223c",
+				Name:       "qwerty",
+				PrepTime:   20,
+				Difficulty: 100,
+				Vegetarian: false,
+			},
+			service: RecipeServiceMock{
+				update: func(ID string, recipe *r.Recipe) error {
+					return errors.NewInvalidParamsErr(map[string]string{errors.Rate: errors.OutOfRange})
+				},
+			},
+			status: 400,
+		},
+		{
+			name:            "error updating a recipe that do not exist",
+			url:             "/recipes/5f10223c",
+			requestPayload:  nil,
+			service:         RecipeServiceMock{},
+			status:          0,
+			expectedPayload: nil,
+		},
+		{
+			name:   "error special case incoming body is not a recipe - error unmarshal",
+			url:    "/recipes/5f10223c",
+			status: 400,
+		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 
 			l := logger.NewLogger()
-			jsonBody, _ := json.Marshal(test.payload)
+			var jsonBody []byte
+			if test.requestPayload == nil {
+				invalidBody := struct {
+					Age int `json:"age"`
+				}{
+					Age: 100,
+				}
+				jsonBody, _ = json.Marshal(&invalidBody)
+			} else {
+				jsonBody, _ = json.Marshal(test.requestPayload)
+			}
+			jsonBody, _ = json.Marshal(test.requestPayload)
 			req, err := http.NewRequest("PUT", test.url, bytes.NewBuffer(jsonBody))
 			if err != nil {
 				t.Fatal(err)
@@ -237,9 +461,11 @@ func TestRecipeHandler_UpdateRecipe(t *testing.T) {
 				t.Errorf("handler returned wrong status code: expected %v got %v", test.status, rr.Code)
 			}
 
-			if test.checkPayload != nil {
-				if err := test.checkPayload(rr.Body.String()); err != nil {
-					t.Errorf("error validation payload: %w", err)
+			if test.expectedPayload != nil {
+				rcp := &r.Recipe{}
+				_ = json.Unmarshal(rr.Body.Bytes(), rcp)
+				if !reflect.DeepEqual(test.expectedPayload, rcp) {
+					t.Errorf("expected: '%v' instead got: '%v'", test.expectedPayload, rcp)
 				}
 			}
 		})
@@ -248,15 +474,49 @@ func TestRecipeHandler_UpdateRecipe(t *testing.T) {
 
 func TestRecipeHandler_DeleteRecipe(t *testing.T) {
 	tests := []struct {
-		name         string
-		url          string
-		payload      interface{}
-		service      RecipeServiceMock
-		status       int
-		checkPayload func(payload string) error
+		name            string
+		url             string
+		service         RecipeServiceMock
+		status          int
+		expectedPayload *r.Recipe
 	}{
-		// todo
-		{},
+		{
+			name: "Successful request",
+			url:  "/recipes/5f10223c",
+			service: RecipeServiceMock{
+				delete: func(recipeID string) error {
+					return nil
+				},
+			},
+			status: 204,
+			expectedPayload: &r.Recipe{
+				ID:         "5f10223c",
+				Name:       "qwerty",
+				PrepTime:   20,
+				Difficulty: 3,
+				Vegetarian: false,
+			},
+		},
+		{
+			name: "error getting recipe ID - out of scope",
+			url:  "/recipes/0123456789xyz",
+			service: RecipeServiceMock{
+				delete: func(recipeID string) error {
+					return errors.NewUserErr("invalid ID format")
+				},
+			},
+			status: 400,
+		},
+		{
+			name: "error - recipe not found ",
+			url:  "/recipes/5f10223c",
+			service: RecipeServiceMock{
+				delete: func(recipeID string) error {
+					return errors.NewNotFoundErr()
+				},
+			},
+			status: 404,
+		},
 	}
 
 	for _, test := range tests {
@@ -273,7 +533,7 @@ func TestRecipeHandler_DeleteRecipe(t *testing.T) {
 			// We create a ResponseRecorder (which satisfies http.ResponseWriter) to record the response.
 			rr := httptest.NewRecorder()
 			servicesRouter := mux.NewRouter()
-			servicesRouter.HandleFunc("/recipes/{id}", rh.DeleteRecipe).Methods("DELETE")
+			servicesRouter.HandleFunc("/recipes/{ID}", rh.DeleteRecipe).Methods("DELETE")
 
 			// Our handlers satisfy http.Handler, so we can call their ServeHTTP method
 			// directly and pass in our Request and ResponseRecorder.
@@ -282,12 +542,6 @@ func TestRecipeHandler_DeleteRecipe(t *testing.T) {
 			// Check the status code is what we expect.
 			if rr.Code != test.status {
 				t.Errorf("handler returned wrong status code: expected %v got %v", test.status, rr.Code)
-			}
-
-			if test.checkPayload != nil {
-				if err := test.checkPayload(rr.Body.String()); err != nil {
-					t.Errorf("error validation payload: %w", err)
-				}
 			}
 		})
 	}

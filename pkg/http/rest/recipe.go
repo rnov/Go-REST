@@ -3,6 +3,7 @@ package rest
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/gorilla/mux"
 	"github.com/rnov/Go-REST/pkg/errors"
 	log "github.com/rnov/Go-REST/pkg/logger"
 	"github.com/rnov/Go-REST/pkg/recipe"
@@ -11,7 +12,7 @@ import (
 )
 
 const (
-	recipeID = "recipeID"
+	recipeID = "ID"
 )
 
 // interface, could get any controller that implements the interface (redis, mongo, psql ...)
@@ -29,17 +30,18 @@ func NewRecipeHandler(rcpSrv service.RcpSrv, l log.Loggers) *RecipeHandler {
 	return recipeHandler
 }
 
-func (rh *RecipeHandler) GetRecipeById(w http.ResponseWriter, r *http.Request) {
+func (rh *RecipeHandler) GetRecipeByID(w http.ResponseWriter, r *http.Request) {
 
-	id := r.Header.Get(recipeID)
-	if len(id) == 0 {
+	params := mux.Vars(r)
+	ID := params[recipeID]
+	if len(ID) == 0 {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
-	rcp, err := rh.rcpSrv.GetById(id)
+	rcp, err := rh.rcpSrv.GetByID(ID)
 	if err != nil {
-		errors.BuildErrorResponse(w, err)
+		errors.BuildResponse(w, err)
 	}
 
 	// Marshal provided interface into JSON structure
@@ -59,12 +61,11 @@ func (rh *RecipeHandler) GetAllRecipes(w http.ResponseWriter, r *http.Request) {
 
 	rcps, err := rh.rcpSrv.ListAll()
 	if err != nil {
-		errors.BuildErrorResponse(w, err)
+		errors.BuildResponse(w, err)
 	}
 	var recipesJson []byte
 	w.Header().Set("Content-Type", "application/json")
 	recipesJson, jsonErr := json.Marshal(rcps)
-	w.WriteHeader(http.StatusOK)
 	if _, parseErr := w.Write(recipesJson); jsonErr != nil || parseErr != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
@@ -74,55 +75,65 @@ func (rh *RecipeHandler) GetAllRecipes(w http.ResponseWriter, r *http.Request) {
 func (rh *RecipeHandler) CreateRecipe(w http.ResponseWriter, r *http.Request) {
 
 	rcp := &recipe.Recipe{}
-	err := json.NewDecoder(r.Body).Decode(rcp)
-
-	if err != nil {
+	dec := json.NewDecoder(r.Body)
+	dec.DisallowUnknownFields()
+	if err := dec.Decode(rcp); err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	_, err = rh.rcpSrv.Create(rcp)
-	if err != nil {
-		errors.BuildErrorResponse(w, err)
+	if err := rh.rcpSrv.Create(rcp); err != nil {
+		errors.BuildResponse(w, err)
+		return
 	}
 
 	body, jsonErr := json.Marshal(rcp)
-	if _, parseErr := w.Write(body); jsonErr != nil || parseErr != nil {
+	if jsonErr != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 	w.WriteHeader(http.StatusCreated)
+	w.Header().Set("Content-Type", "application/json")
+	w.Write(body)
 }
 
 func (rh *RecipeHandler) UpdateRecipe(w http.ResponseWriter, r *http.Request) {
 	rcp := &recipe.Recipe{}
-	err := json.NewDecoder(r.Body).Decode(rcp)
-
-	if err != nil {
-		w.WriteHeader(http.StatusNotFound)
+	dec := json.NewDecoder(r.Body)
+	dec.DisallowUnknownFields()
+	if err := dec.Decode(rcp); err != nil {
+		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	ID := r.Header.Get(recipeID)
+
+	params := mux.Vars(r)
+	ID := params[recipeID]
 	if len(ID) == 0 {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	err = rh.rcpSrv.Update(rcp)
-	if err != nil {
-		errors.BuildErrorResponse(w, err)
+	if err := rh.rcpSrv.Update(ID, rcp); err != nil {
+		errors.BuildResponse(w, err)
 	}
 
-	w.WriteHeader(http.StatusOK)
+	body, jsonErr := json.Marshal(rcp)
+	if jsonErr != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	w.WriteHeader(http.StatusCreated)
+	w.Header().Set("Content-Type", "application/json")
+	w.Write(body)
 }
 
 func (rh *RecipeHandler) DeleteRecipe(w http.ResponseWriter, r *http.Request) {
-
-	ID := r.Header.Get(recipeID)
+	params := mux.Vars(r)
+	ID := params[recipeID]
 	if len(ID) == 0 {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 	if err := rh.rcpSrv.Delete(ID); err != nil {
-		errors.BuildErrorResponse(w, err)
+		errors.BuildResponse(w, err)
 		return
 	}
 

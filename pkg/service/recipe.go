@@ -1,18 +1,17 @@
 package service
 
 import (
-	"fmt"
 	"github.com/rnov/Go-REST/pkg/db"
-	r "github.com/rnov/Go-REST/pkg/recipe"
 	"github.com/rnov/Go-REST/pkg/errors"
+	r "github.com/rnov/Go-REST/pkg/recipe"
+	"regexp"
 )
 
-
 type RcpSrv interface {
-	GetById(recipeId string) (*r.Recipe, error)
+	GetByID(recipeId string) (*r.Recipe, error)
 	ListAll() ([]*r.Recipe, error)
-	Create(recipe *r.Recipe) (*r.Recipe, error)
-	Update(recipe *r.Recipe) error
+	Create(recipe *r.Recipe) error
+	Update(ID string, recipe *r.Recipe) error
 	Delete(recipeId string) error
 }
 
@@ -30,41 +29,46 @@ func NewRecipe(rcpDb db.Recipe) *rcp {
 	return recipeSrv
 }
 
-func (r *rcp) GetById(recipeId string) (*r.Recipe, error) {
-
-	rcp, err := r.rcpDb.GetRecipeById(recipeId)
-	if rcp == nil {
-		return nil, errors.NewNotFoundErr(fmt.Sprintf("rcp with id: %s was not found", rcp.ID))
+func (r *rcp) GetByID(ID string) (*r.Recipe, error) {
+	if !validateRcpID(ID) {
+		return nil, errors.NewUserErr("invalid ID format")
 	}
+	rcp, err := r.rcpDb.GetRecipeById(ID)
 	if err != nil {
-		return nil, errors.NewDBErr(err.Error())
+		return nil, err
 	}
 
 	return rcp, nil
-
 }
 
 func (r *rcp) ListAll() ([]*r.Recipe, error) {
 	recipes, err := r.rcpDb.GetAllRecipes()
 	if err != nil {
-		return nil, errors.NewDBErr(err.Error())
+		return nil, err
 	}
 
 	return recipes, nil
 }
 
-func (r *rcp) Create(recipe *r.Recipe) (*r.Recipe, error) {
+func (r *rcp) Create(recipe *r.Recipe) error {
 	if v := validateRecipeInput(recipe); len(v) > 0 {
-		return nil, errors.NewInvalidParamsErr(v)
+		return errors.NewInvalidParamsErr(v)
 	}
 	if err := r.rcpDb.CreateRecipe(recipe); err != nil {
-		return nil, err
+		return err
 	}
 
-	return recipe, nil
+	return nil
 }
 
-func (r *rcp) Update(recipe *r.Recipe) error {
+func (r *rcp) Update(ID string, recipe *r.Recipe) error {
+	if !validateRcpID(ID) {
+		return errors.NewUserErr("invalid ID format")
+	}
+	if ID != recipe.ID {
+		return errors.NewUserErr("ID param and recipe ID do not match")
+	}
+
 	if v := validateRecipeInput(recipe); len(v) > 0 {
 		return errors.NewInvalidParamsErr(v)
 	}
@@ -76,8 +80,11 @@ func (r *rcp) Update(recipe *r.Recipe) error {
 	return nil
 }
 
-func (r *rcp) Delete(recipeId string) error {
-	if err := r.rcpDb.DeleteRecipe(recipeId); err != nil {
+func (r *rcp) Delete(recipeID string) error {
+	if !validateRcpID(recipeID) {
+		return errors.NewUserErr("invalid ID format")
+	}
+	if err := r.rcpDb.DeleteRecipe(recipeID); err != nil {
 		return err
 	}
 	return nil
@@ -93,8 +100,16 @@ func validateRecipeInput(recipe *r.Recipe) map[string]string {
 	if len(recipe.Name) > 100 {
 		valid[errors.Name] = errors.TooLong
 	}
+	if len(recipe.Name) == 0 {
+		valid[errors.Name] = errors.MissingName
+	}
 	if recipe.PrepTime <= 1 || recipe.PrepTime > 1000 {
 		valid[errors.Preptime] = errors.OutOfRange
 	}
 	return valid
+}
+
+func validateRcpID(ID string) bool {
+	regex, _ := regexp.Compile("^[a-zA-Z0-9]{1,12}$")
+	return regex.MatchString(ID)
 }

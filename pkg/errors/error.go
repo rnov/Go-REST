@@ -6,76 +6,65 @@ import (
 )
 
 const (
-	Exists        = "already Exists"
-	NotFound      = "does not Exist"
-	DBError       = "connection Failed"
-	AuthFailed    = "auth Failed"
-	InvalidParams = "no valid parameters"
-
-	OutOfRange = "out of range"
-	TooLong    = "too long"
+	Exists      = "already Exists"
+	NotFound    = "does not Exist"
+	AuthFailed  = "auth Failed"
+	OutOfRange  = "out of range"
+	TooLong     = "too long"
+	MissingName = "missing name"
 )
 
 const (
-	Id         = "id"
 	Name       = "name"
 	Preptime   = "preptime"
 	Difficulty = "difficulty"
-	Vegetarian = "vegetarian"
 )
 
 const (
 	Rate   = "rate"
-	RateId = "id"
+	RateID = "id"
 )
 
 const (
-	Authentication = "Authentication"
-	Bearer         = "bearer"
-	RecipeId       = "id"
+	Bearer = "bearer"
 )
 
 type ExistErr struct {
-	msg string
+	msgToLog string
 }
 
 func (myErr *ExistErr) Error() string {
-	return Exists
+	return myErr.msgToLog
 }
 
-func NewExistErr(message string) *ExistErr {
+func NewExistErr(msg string) *ExistErr {
 	return &ExistErr{
-		msg: message,
+		msgToLog: msg,
 	}
 }
 
 type NotFoundErr struct {
-	msg string
 }
 
 func (myErr *NotFoundErr) Error() string {
-	return NotFound
+	return "item not found"
 }
 
-func NewNotFoundErr(message string) *NotFoundErr {
-	return &NotFoundErr{
-		msg: message,
-	}
+func NewNotFoundErr() *NotFoundErr {
+	return &NotFoundErr{}
 }
 
 type DBErr struct {
-	msg      string
 	msgToLog string
 }
 
 func (myErr *DBErr) Error() string {
-	return DBError
+	return myErr.msgToLog
 }
 
-func NewDBErr(message string) *DBErr {
-	//message := fmt.Sprintf("error in DB")
+func NewDBErr(msg string) *DBErr {
 	return &DBErr{
-		msg: message,
+		msgToLog: msg,
 	}
 }
 
@@ -94,7 +83,6 @@ func NewFailedAuthErr(message string) *FailedAuthErr {
 }
 
 type InvalidParamsErr struct {
-	msg        string
 	Parameters map[string]string
 }
 
@@ -108,22 +96,40 @@ func NewInvalidParamsErr(params map[string]string) *InvalidParamsErr {
 	}
 }
 
-func BuildErrorResponse(w http.ResponseWriter, err error) {
+type UserErr struct {
+	msg string
+}
+
+func (myErr *UserErr) Error() string {
+	return myErr.msg
+}
+
+func NewUserErr(message string) *UserErr {
+	return &UserErr{
+		msg: message,
+	}
+}
+
+func BuildResponse(w http.ResponseWriter, err error) {
 	switch e := err.(type) {
 	case *FailedAuthErr:
 		w.WriteHeader(http.StatusUnauthorized)
 	case *DBErr:
-		//http.Error(http.StatusInternalServerError, ,)
 		w.WriteHeader(http.StatusInternalServerError)
 	case *NotFoundErr:
 		w.WriteHeader(http.StatusNotFound)
+	case *UserErr:
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte(e.Error()))
 	case *InvalidParamsErr:
 		body, jsonErr := json.Marshal(e.Parameters)
-		if _, parseErr := w.Write(body); jsonErr != nil || parseErr != nil {
+		if jsonErr != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusBadRequest)
+		w.Write(body)
 	}
 }

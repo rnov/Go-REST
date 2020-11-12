@@ -33,11 +33,11 @@ func (r *Service) Rate(id string, rate *r.Rate) error {
 	return nil
 }
 
-func validateRateDataRange(id string, rate *r.Rate) map[string]string {
+func validateRateDataRange(ID string, rate *r.Rate) map[string]string {
 	valid := make(map[string]string)
 
-	if len(id) > 100 {
-		valid[errors.RateId] = errors.TooLong
+	if len(ID) > 12 {
+		valid[errors.RateID] = errors.TooLong
 	}
 	if rate.Note < 1 || rate.Note > 5 {
 		valid[errors.Rate] = errors.OutOfRange

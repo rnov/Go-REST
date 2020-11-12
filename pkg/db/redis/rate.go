@@ -9,8 +9,8 @@ import (
 )
 
 const (
-	allPattern    = "*"
-	ratePattern   = "RATE_"
+	allPattern  = "*"
+	ratePattern = "RATE_"
 )
 
 func (rProxy *Proxy) RateRecipe(recipeId string, rate *rate.Rate) error {
@@ -22,7 +22,7 @@ func (rProxy *Proxy) RateRecipe(recipeId string, rate *rate.Rate) error {
 	}
 
 	if exists == 0 {
-		return errors.NewNotFoundErr("not found")
+		return errors.NewNotFoundErr()
 	}
 
 	// prepare to insert

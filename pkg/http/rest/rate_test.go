@@ -34,7 +34,7 @@ func TestRateHandler_RateRecipe(t *testing.T) {
 	}{
 		//{
 		//	name:    "successful rate",
-		//	url:     "/recipes/5f10223c-c420-4640-833a-4e4576ca565c/rating",
+		//	url:     "/recipes/5f10223c/rating",
 		//	payload: rate.Rate{Note: 5},
 		//	service: rateServiceMock{
 		//		rate: func(id string, r *rate.Rate) error {
@@ -42,11 +42,11 @@ func TestRateHandler_RateRecipe(t *testing.T) {
 		//		},
 		//	},
 		//	status:       http.StatusOK,
-		//	checkPayload: nil,
+		//	expectedPayload: nil,
 		//},
 		{
 			name:         "Invalid Body",
-			url:          "/recipes/5f10223c-c420-4640-833a-4e4576ca565c/rating",
+			url:          "/recipes/5f10223c/rating",
 			payload:      struct{ name string }{name: "invalid Body"},
 			service:      rateServiceMock{},
 			status:       http.StatusBadRequest,
@@ -54,7 +54,7 @@ func TestRateHandler_RateRecipe(t *testing.T) {
 		},
 		{
 			name:    "Invalid Data Range",
-			url:     "/recipes/5f10223c-c420-4640-833a-4e4576ca565c/rating",
+			url:     "/recipes/5f10223c/rating",
 			payload: rate.Rate{Note: 10},
 			service: rateServiceMock{
 				rate: func(id string, r *rate.Rate) error {
@@ -101,7 +101,6 @@ func TestRateHandler_RateRecipe(t *testing.T) {
 					t.Errorf("error validation payload: %w", err)
 				}
 			}
-
 		})
 	}
 }
