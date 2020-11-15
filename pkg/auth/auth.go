@@ -2,7 +2,6 @@ package auth
 
 import (
 	"github.com/rnov/Go-REST/pkg/db"
-	"github.com/rnov/Go-REST/pkg/errors"
 	"golang.org/x/crypto/bcrypt"
 	"log"
 )
@@ -20,7 +19,7 @@ func NewAuth(db db.Auth) *Auth {
 func (a Auth) Validate(ba string) error {
 	encodedAuth := encode(ba)
 	if err := a.Db.CheckAuth(encodedAuth); err != nil {
-		return errors.NewFailedAuthErr("invalid credentials")
+		return err
 	}
 	return nil
 }

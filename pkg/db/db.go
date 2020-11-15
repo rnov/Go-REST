@@ -1,15 +1,15 @@
 package db
 
 import (
+	e "errors"
 	"github.com/rnov/Go-REST/pkg/config"
 	"github.com/rnov/Go-REST/pkg/db/redis"
-	"github.com/rnov/Go-REST/pkg/errors"
 	"github.com/rnov/Go-REST/pkg/rate"
 	rcp "github.com/rnov/Go-REST/pkg/recipe"
 )
 
 type Recipe interface {
-	GetRecipeById(recipeId string) (*rcp.Recipe, error)
+	GetRecipeByID(recipeId string) (*rcp.Recipe, error)
 	GetAllRecipes() ([]*rcp.Recipe, error)
 	CreateRecipe(recipe *rcp.Recipe) error
 	UpdateRecipe(recipe *rcp.Recipe) error
@@ -43,5 +43,5 @@ func NewDbClient(cfg config.DBConfig) (Client, error) {
 		//fmt.Println(pong)
 		return redis.NewRedisProxy(redisClient), nil
 	}
-	return nil, errors.NewExistErr(false)
+	return nil, e.New("database does not exist")
 }

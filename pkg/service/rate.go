@@ -7,7 +7,7 @@ import (
 )
 
 type RateSrv interface {
-	Rate(id string, rate *r.Rate) error
+	Rate(ID string, rate *r.Rate) error
 }
 
 type Service struct {
@@ -22,11 +22,11 @@ func NewRate(rateDb db.Rate) *Service {
 	return rateSrv
 }
 
-func (r *Service) Rate(id string, rate *r.Rate) error {
-	if v := validateRateDataRange(id, rate); len(v) > 0 {
+func (r *Service) Rate(ID string, rate *r.Rate) error {
+	if v := validateRateDataRange(ID, rate); len(v) > 0 {
 		return errors.NewInputError("Invalid input parameters", v)
 	}
-	if err := r.rateDb.RateRecipe(id, rate); err != nil {
+	if err := r.rateDb.RateRecipe(ID, rate); err != nil {
 		return err
 	}
 

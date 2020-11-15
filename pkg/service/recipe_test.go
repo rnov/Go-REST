@@ -16,7 +16,7 @@ type recipeDBMock struct {
 	deleteRecipe  func(recipeId string) error
 }
 
-func (rm *recipeDBMock) GetRecipeById(recipeId string) (*recipe.Recipe, error) {
+func (rm *recipeDBMock) GetRecipeByID(recipeId string) (*recipe.Recipe, error) {
 	if rm.getRecipeById != nil {
 		return rm.getRecipeById(recipeId)
 	}

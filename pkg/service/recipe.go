@@ -33,7 +33,7 @@ func (r *rcp) GetByID(ID string) (*r.Recipe, error) {
 	if !validateRcpID(ID) {
 		return nil, errors.NewInputError("Invalid ID format", nil)
 	}
-	rcp, err := r.rcpDb.GetRecipeById(ID)
+	rcp, err := r.rcpDb.GetRecipeByID(ID)
 	if err != nil {
 		return nil, err
 	}

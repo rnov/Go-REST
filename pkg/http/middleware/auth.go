@@ -4,6 +4,7 @@ import (
 	"github.com/rnov/Go-REST/pkg/auth"
 	"github.com/rnov/Go-REST/pkg/errors"
 	"net/http"
+	"strings"
 )
 
 const (
@@ -14,12 +15,13 @@ const (
 func Authentication(auth *auth.Auth, next func(http.ResponseWriter, *http.Request)) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 
-		ah := r.Header[authHeader]
-		if len(ah) != 1 && !validateAuthStructure(ah) {
+		var basicAuth string
+		ah := r.Header.Get(authHeader)
+		basicAuth, valid := validateAuthStructure(ah)
+		if !valid {
 			w.WriteHeader(http.StatusUnauthorized)
 			return
 		}
-		basicAuth := ah[1]
 		if err := auth.Validate(basicAuth); err != nil {
 			errors.BuildResponse(w, r.Method, err)
 			return
@@ -28,6 +30,9 @@ func Authentication(auth *auth.Auth, next func(http.ResponseWriter, *http.Reques
 	}
 }
 
-func validateAuthStructure(ah []string) bool {
-	return len(ah) != 2 || ah[0] != basic
+func validateAuthStructure(ah string) (string, bool) {
+	if res := strings.Split(ah, " "); res[0] != basic && len(res) == 2 {
+		return res[1], true
+	}
+	return "", false
 }

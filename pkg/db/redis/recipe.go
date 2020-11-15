@@ -8,7 +8,7 @@ import (
 
 const recipePattern = "RECIPE_"
 
-func (rProxy *Proxy) GetRecipeById(recipeId string) (*recipe.Recipe, error) {
+func (rProxy *Proxy) GetRecipeByID(recipeId string) (*recipe.Recipe, error) {
 	recipeFields, err := rProxy.master.HGetAll(recipePattern + recipeId).Result()
 	if err != nil {
 		return nil, err

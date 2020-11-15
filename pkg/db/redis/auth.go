@@ -11,7 +11,7 @@ func (rProxy *Proxy) CheckAuth(auth string) error {
 		return err
 	}
 	if exist == 0 {
-		return errors.NewFailedAuthErr("")
+		return errors.NewFailedAuthErr()
 	}
 
 	return nil

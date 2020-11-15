@@ -2,12 +2,11 @@ package errors
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 )
 
 const (
-	Exists      = "already Exists"
-	NotFound    = "does not Exist"
 	AuthFailed  = "auth Failed"
 	OutOfRange  = "out of range"
 	TooLong     = "too long"
@@ -22,11 +21,7 @@ const (
 
 const (
 	Rate   = "rate"
-	RateID = "id"
-)
-
-const (
-	Bearer = "bearer"
+	RateID = "ID"
 )
 
 type DBErr struct {
@@ -44,16 +39,14 @@ func NewDBErr(msg string) *DBErr {
 }
 
 type FailedAuthErr struct {
-	msg string
 }
 
 func (myErr *FailedAuthErr) Error() string {
-	return AuthFailed
+	return fmt.Sprintf("Failed validation atempt ")
 }
 
-func NewFailedAuthErr(message string) *FailedAuthErr {
+func NewFailedAuthErr() *FailedAuthErr {
 	return &FailedAuthErr{
-		msg: message,
 	}
 }
 
