@@ -29,31 +29,6 @@ const (
 	Bearer = "bearer"
 )
 
-type ExistErr struct {
-	msgToLog string
-}
-
-func (myErr *ExistErr) Error() string {
-	return myErr.msgToLog
-}
-
-func NewExistErr(msg string) *ExistErr {
-	return &ExistErr{
-		msgToLog: msg,
-	}
-}
-
-type NotFoundErr struct {
-}
-
-func (myErr *NotFoundErr) Error() string {
-	return "item not found"
-}
-
-func NewNotFoundErr() *NotFoundErr {
-	return &NotFoundErr{}
-}
-
 type DBErr struct {
 	msgToLog string
 }
@@ -82,48 +57,62 @@ func NewFailedAuthErr(message string) *FailedAuthErr {
 	}
 }
 
-type InvalidParamsErr struct {
-	Parameters map[string]string
+// Error for user Invalid input parameterss - such errors are not being logged their purpose is to inform user of the missing/wrong data
+type InputErr struct {
+	Msg        string            `json:"error,omitempty"`
+	Parameters map[string]string `json:"parameters,omitempty"`
 }
 
-func (myErr *InvalidParamsErr) Error() string {
-	return "invalid parameters"
+func (ie *InputErr) Error() string {
+	return ie.Msg
 }
 
-func NewInvalidParamsErr(params map[string]string) *InvalidParamsErr {
-	return &InvalidParamsErr{
+func NewInputError(msg string, params map[string]string) *InputErr {
+	return &InputErr{
+		Msg:        msg,
 		Parameters: params,
 	}
 }
 
-type UserErr struct {
-	msg string
+type ExistErr struct {
+	exist bool
 }
 
-func (myErr *UserErr) Error() string {
-	return myErr.msg
+func (ee *ExistErr) Error() string {
+	var retMsg string
+	if ee.exist {
+		retMsg = "item already exists"
+	} else {
+		retMsg = "item does not exist"
+	}
+	return retMsg
 }
 
-func NewUserErr(message string) *UserErr {
-	return &UserErr{
-		msg: message,
+func NewExistErr(exist bool) *ExistErr {
+	return &ExistErr{
+		exist: exist,
 	}
 }
 
-func BuildResponse(w http.ResponseWriter, err error) {
+func BuildResponse(w http.ResponseWriter, method string, err error) {
+
 	switch e := err.(type) {
 	case *FailedAuthErr:
 		w.WriteHeader(http.StatusUnauthorized)
 	case *DBErr:
 		w.WriteHeader(http.StatusInternalServerError)
-	case *NotFoundErr:
-		w.WriteHeader(http.StatusNotFound)
-	case *UserErr:
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte(e.Error()))
-	case *InvalidParamsErr:
-		body, jsonErr := json.Marshal(e.Parameters)
+	case *ExistErr:
+		if method == "GET" && !e.exist {
+			w.WriteHeader(http.StatusNotFound)
+		} else if method == "POST" && e.exist {
+			w.WriteHeader(http.StatusForbidden)
+		} else if method == "PUT" && !e.exist {
+			w.WriteHeader(http.StatusNoContent)
+		} else if method == "DELETE" && !e.exist {
+			w.WriteHeader(http.StatusNotFound)
+		}
+	case *InputErr:
+		body, jsonErr := json.Marshal(e)
 		if jsonErr != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			return

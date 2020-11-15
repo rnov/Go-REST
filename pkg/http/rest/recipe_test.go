@@ -43,7 +43,7 @@ func (rsm RecipeServiceMock) Create(recipe *r.Recipe) error {
 }
 
 func (rsm RecipeServiceMock) Update(ID string, recipe *r.Recipe) error {
-	if rsm.create != nil {
+	if rsm.update != nil {
 		return rsm.update(ID, recipe)
 	}
 	panic("Not implemented")
@@ -92,7 +92,7 @@ func TestRecipeHandler_GetRecipeByID(t *testing.T) {
 			url:  "/recipes/0123456789xyz",
 			service: RecipeServiceMock{
 				getByID: func(recipeID string) (*r.Recipe, error) {
-					return nil, errors.NewUserErr("invalid ID format")
+					return nil, errors.NewInputError("Invalid ID format", nil)
 				},
 			},
 			status: 400,
@@ -102,7 +102,7 @@ func TestRecipeHandler_GetRecipeByID(t *testing.T) {
 			url:  "/recipes/5f10223c",
 			service: RecipeServiceMock{
 				getByID: func(recipeID string) (*r.Recipe, error) {
-					return nil, errors.NewNotFoundErr()
+					return nil, errors.NewExistErr(false)
 				},
 			},
 			status: 404,
@@ -248,7 +248,7 @@ func TestRecipeHandler_GetAllRecipes(t *testing.T) {
 				rcps := make([]*r.Recipe, 0)
 				_ = json.Unmarshal(rr.Body.Bytes(), &rcps)
 				if !reflect.DeepEqual(test.expectedPayload, rcps) {
-					t.Errorf("payload values do not match")
+					t.Errorf("requestPayload values do not match")
 				}
 			}
 		})
@@ -300,7 +300,7 @@ func TestRecipeHandler_CreateRecipe(t *testing.T) {
 			},
 			service: RecipeServiceMock{
 				create: func(recipe *r.Recipe) error {
-					return errors.NewInvalidParamsErr(map[string]string{errors.Rate: errors.OutOfRange})
+					return errors.NewInputError("Invalid input parameters", map[string]string{errors.Rate: errors.OutOfRange})
 				},
 			},
 			status: 400,
@@ -370,7 +370,7 @@ func TestRecipeHandler_UpdateRecipe(t *testing.T) {
 	}{
 		{
 			name: "Successful request",
-			url:  "/recipes",
+			url:  "/recipes/5f10223c",
 			requestPayload: &r.Recipe{
 				ID:         "5f10223c",
 				Name:       "qwerty",
@@ -404,24 +404,33 @@ func TestRecipeHandler_UpdateRecipe(t *testing.T) {
 			},
 			service: RecipeServiceMock{
 				update: func(ID string, recipe *r.Recipe) error {
-					return errors.NewInvalidParamsErr(map[string]string{errors.Rate: errors.OutOfRange})
+					return errors.NewInputError("Invalid input parameters", map[string]string{errors.Rate: errors.OutOfRange})
 				},
 			},
 			status: 400,
 		},
 		{
-			name:            "error updating a recipe that do not exist",
-			url:             "/recipes/5f10223c",
-			requestPayload:  nil,
-			service:         RecipeServiceMock{},
-			status:          0,
-			expectedPayload: nil,
+			name: "error updating a recipe that do not exist",
+			url:  "/recipes/5f10223c",
+			requestPayload: &r.Recipe{
+				ID:         "5f10223c",
+				Name:       "qwerty",
+				PrepTime:   20,
+				Difficulty: 100,
+				Vegetarian: false,
+			},
+			service: RecipeServiceMock{
+				update: func(ID string, recipe *r.Recipe) error {
+					return errors.NewExistErr(false)
+				},
+			},
+			status: 204,
 		},
-		{
-			name:   "error special case incoming body is not a recipe - error unmarshal",
-			url:    "/recipes/5f10223c",
-			status: 400,
-		},
+		//{
+		//	name:   "error special case incoming body is not a recipe - error unmarshal",
+		//	url:    "/recipes/5f10223c",
+		//	status: 400,
+		//},
 	}
 
 	for _, test := range tests {
@@ -450,7 +459,7 @@ func TestRecipeHandler_UpdateRecipe(t *testing.T) {
 			// We create a ResponseRecorder (which satisfies http.ResponseWriter) to record the response.
 			rr := httptest.NewRecorder()
 			servicesRouter := mux.NewRouter()
-			servicesRouter.HandleFunc("/recipes/{id}", rh.UpdateRecipe).Methods("PUT")
+			servicesRouter.HandleFunc("/recipes/{ID}", rh.UpdateRecipe).Methods("PUT")
 
 			// Our handlers satisfy http.Handler, so we can call their ServeHTTP method
 			// directly and pass in our Request and ResponseRecorder.
@@ -502,7 +511,7 @@ func TestRecipeHandler_DeleteRecipe(t *testing.T) {
 			url:  "/recipes/0123456789xyz",
 			service: RecipeServiceMock{
 				delete: func(recipeID string) error {
-					return errors.NewUserErr("invalid ID format")
+					return errors.NewInputError("Invalid ID format", nil)
 				},
 			},
 			status: 400,
@@ -512,7 +521,7 @@ func TestRecipeHandler_DeleteRecipe(t *testing.T) {
 			url:  "/recipes/5f10223c",
 			service: RecipeServiceMock{
 				delete: func(recipeID string) error {
-					return errors.NewNotFoundErr()
+					return errors.NewExistErr(false)
 				},
 			},
 			status: 404,

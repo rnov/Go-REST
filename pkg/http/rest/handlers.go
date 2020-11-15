@@ -38,7 +38,7 @@ func configRecipeEndpoints(r *mux.Router, rcpHand *RecipeHandler, auth *auth.Aut
 }
 
 func configRateEndPoints(r *mux.Router, rateHand *RateHandler) {
-	r.HandleFunc("/recipes/{id}/rating", rateHand.RateRecipe).Methods("POST")
+	r.HandleFunc("/recipes/{id}/rate", rateHand.RateRecipe).Methods("POST")
 }
 
 

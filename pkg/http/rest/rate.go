@@ -11,14 +11,14 @@ import (
 )
 
 type RateHandler struct {
-	srv    service.Rater
-	logger log.Loggers
+	rateSrv service.RateSrv
+	logger  log.Loggers
 }
 
-func NewRateHandler(srv service.Rater, l log.Loggers) *RateHandler {
+func NewRateHandler(srv service.RateSrv, l log.Loggers) *RateHandler {
 	rateHandler := &RateHandler{
-		srv:    srv,
-		logger: l,
+		rateSrv: srv,
+		logger:  l,
 	}
 	return rateHandler
 }
@@ -30,20 +30,15 @@ func (rh *RateHandler) RateRecipe(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	//payload, err := ioutil.ReadAll(r.Body)
-	//if err != nil {
-	//	w.WriteHeader(http.StatusBadRequest)
-	//	return
-	//}
-
 	rating := &rate.Rate{}
-	jd := json.NewDecoder(r.Body)
-	jd.DisallowUnknownFields()
-	if err := jd.Decode(&rating); err != nil {
-		w.WriteHeader(http.StatusNotFound)
+	dec := json.NewDecoder(r.Body)
+	dec.DisallowUnknownFields()
+	if err := dec.Decode(rating); err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		return
 	}
-	if err := rh.srv.Rate(ID, rating); err != nil {
-		errors.BuildResponse(w, err)
+	if err := rh.rateSrv.Rate(ID, rating); err != nil {
+		errors.BuildResponse(w, r.Method, err)
 	}
 
 	w.WriteHeader(http.StatusOK)

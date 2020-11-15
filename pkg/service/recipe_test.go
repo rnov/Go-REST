@@ -1,7 +1,6 @@
 package service
 
 import (
-	e "errors"
 	"fmt"
 	"github.com/rnov/Go-REST/pkg/errors"
 	"github.com/rnov/Go-REST/pkg/recipe"
@@ -84,22 +83,21 @@ func TestRcp_GetByID(t *testing.T) {
 			expectedErr: nil,
 		},
 		{
-			// todo check, it should fail with the new logic
 			name: "error recipe not found",
 			rcpDB: recipeDBMock{
 				getRecipeById: func(recipeId string) (*recipe.Recipe, error) {
-					return nil, nil
+					return nil, errors.NewExistErr(false)
 				},
 			},
 			inputRcpID:  "654321",
 			expectedRcp: nil,
-			expectedErr: errors.NewNotFoundErr(),
+			expectedErr: errors.NewExistErr(false),
 		},
 		{
 			name:        "error recipe ID does not match regex",
 			inputRcpID:  "0987654321qwerty",
 			expectedRcp: nil,
-			expectedErr: errors.NewUserErr("invalid ID format"),
+			expectedErr: errors.NewInputError("Invalid ID format", nil),
 		},
 		{
 			name: "error DB issue",
@@ -214,9 +212,9 @@ func TestRcp_ListAll(t *testing.T) {
 
 func TestRcp_Create(t *testing.T) {
 	tests := []struct {
-		name     string
-		rcpDB    recipeDBMock
-		inputRcp *recipe.Recipe
+		name        string
+		rcpDB       recipeDBMock
+		inputRcp    *recipe.Recipe
 		expectedErr error
 	}{
 		{
@@ -243,13 +241,13 @@ func TestRcp_Create(t *testing.T) {
 				Difficulty: 100,
 				Vegetarian: false,
 			},
-			expectedErr: e.New("invalid parameters"),
+			expectedErr: errors.NewInputError("Invalid input parameters", nil),
 		},
 		{
 			name: "error DB issue - recipe already exists",
 			rcpDB: recipeDBMock{
 				createRecipe: func(recipe *recipe.Recipe) error {
-					return errors.NewExistErr(fmt.Sprintf("recipe with ID %s already exists", recipe.ID))
+					return errors.NewExistErr(true)
 				},
 			},
 			inputRcp: &recipe.Recipe{
@@ -259,7 +257,7 @@ func TestRcp_Create(t *testing.T) {
 				Difficulty: 3,
 				Vegetarian: false,
 			},
-			expectedErr: errors.NewExistErr(fmt.Sprintf("recipe with ID %s already exists", "654321")),
+			expectedErr: errors.NewExistErr(true),
 		},
 	}
 
@@ -301,6 +299,7 @@ func TestRcp_Update(t *testing.T) {
 		},
 		{
 			name: "error input validation - Difficulty out of range",
+			ID:   "654321",
 			inputRcp: &recipe.Recipe{
 				ID:         "654321",
 				Name:       "qwerty",
@@ -308,7 +307,7 @@ func TestRcp_Update(t *testing.T) {
 				Difficulty: 100,
 				Vegetarian: false,
 			},
-			expectedErr: e.New("invalid parameters"),
+			expectedErr: errors.NewInputError("Invalid input parameters", nil),
 		},
 		{
 			name: "error input validation - IDs do not match",
@@ -320,13 +319,14 @@ func TestRcp_Update(t *testing.T) {
 				Difficulty: 100,
 				Vegetarian: false,
 			},
-			expectedErr: e.New("invalid parameters"),
+			expectedErr: errors.NewInputError("ID param and recipe ID do not match", nil),
 		},
 		{
 			name: "error DB issue - recipe does not exist",
+			ID:   "654321",
 			rcpDB: recipeDBMock{
 				updateRecipe: func(recipe *recipe.Recipe) error {
-					return errors.NewExistErr(fmt.Sprintf("recipe with ID %s does not exist", recipe.ID))
+					return errors.NewExistErr(false)
 				},
 			},
 			inputRcp: &recipe.Recipe{
@@ -336,7 +336,7 @@ func TestRcp_Update(t *testing.T) {
 				Difficulty: 3,
 				Vegetarian: false,
 			},
-			expectedErr: errors.NewExistErr(fmt.Sprintf("recipe with ID %s does not exist", "654321")),
+			expectedErr: errors.NewExistErr(false),
 		},
 	}
 

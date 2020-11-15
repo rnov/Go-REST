@@ -41,7 +41,7 @@ func (rh *RecipeHandler) GetRecipeByID(w http.ResponseWriter, r *http.Request) {
 
 	rcp, err := rh.rcpSrv.GetByID(ID)
 	if err != nil {
-		errors.BuildResponse(w, err)
+		errors.BuildResponse(w, r.Method, err)
 	}
 
 	// Marshal provided interface into JSON structure
@@ -51,7 +51,7 @@ func (rh *RecipeHandler) GetRecipeByID(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Write content-type, status code, payload
+	// Write content-type, status code, requestPayload
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	fmt.Fprintf(w, "%s", recipeJson)
@@ -61,7 +61,7 @@ func (rh *RecipeHandler) GetAllRecipes(w http.ResponseWriter, r *http.Request) {
 
 	rcps, err := rh.rcpSrv.ListAll()
 	if err != nil {
-		errors.BuildResponse(w, err)
+		errors.BuildResponse(w, r.Method, err)
 	}
 	var recipesJson []byte
 	w.Header().Set("Content-Type", "application/json")
@@ -82,7 +82,7 @@ func (rh *RecipeHandler) CreateRecipe(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err := rh.rcpSrv.Create(rcp); err != nil {
-		errors.BuildResponse(w, err)
+		errors.BuildResponse(w, r.Method, err)
 		return
 	}
 
@@ -112,7 +112,7 @@ func (rh *RecipeHandler) UpdateRecipe(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err := rh.rcpSrv.Update(ID, rcp); err != nil {
-		errors.BuildResponse(w, err)
+		errors.BuildResponse(w, r.Method, err)
 	}
 
 	body, jsonErr := json.Marshal(rcp)
@@ -120,7 +120,7 @@ func (rh *RecipeHandler) UpdateRecipe(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-	w.WriteHeader(http.StatusCreated)
+	w.WriteHeader(http.StatusOK)
 	w.Header().Set("Content-Type", "application/json")
 	w.Write(body)
 }
@@ -133,7 +133,7 @@ func (rh *RecipeHandler) DeleteRecipe(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err := rh.rcpSrv.Delete(ID); err != nil {
-		errors.BuildResponse(w, err)
+		errors.BuildResponse(w, r.Method, err)
 		return
 	}
 

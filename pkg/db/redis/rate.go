@@ -22,7 +22,7 @@ func (rProxy *Proxy) RateRecipe(recipeId string, rate *rate.Rate) error {
 	}
 
 	if exists == 0 {
-		return errors.NewNotFoundErr()
+		return errors.NewExistErr(false)
 	}
 
 	// prepare to insert

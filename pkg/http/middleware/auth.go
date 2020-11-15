@@ -21,7 +21,7 @@ func Authentication(auth *auth.Auth, next func(http.ResponseWriter, *http.Reques
 		}
 		basicAuth := ah[1]
 		if err := auth.Validate(basicAuth); err != nil {
-			errors.BuildResponse(w, err)
+			errors.BuildResponse(w, r.Method, err)
 			return
 		}
 		next(w, r)

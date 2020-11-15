@@ -13,8 +13,9 @@ func (rProxy *Proxy) GetRecipeById(recipeId string) (*recipe.Recipe, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	if len(recipeFields) == 0 {
-		return nil, errors.NewExistErr(fmt.Sprintf("Does not exist Recipe with ID : %s" + recipeId))
+		return nil, errors.NewExistErr(false)
 	}
 
 	rcp := mapToRecipeFromRedis(recipeId, recipeFields)
@@ -58,7 +59,7 @@ func (rProxy *Proxy) CreateRecipe(recipe *recipe.Recipe) error {
 		return errors.NewDBErr(err.Error())
 	}
 	if exists > 0 {
-		return errors.NewExistErr(fmt.Sprintf("recipe with ID %s already exists", recipe.ID))
+		return errors.NewExistErr(true)
 	}
 
 	// prepare to insert
@@ -79,7 +80,7 @@ func (rProxy *Proxy) UpdateRecipe(recipe *recipe.Recipe) error {
 		return errors.NewDBErr(err.Error())
 	}
 	if exists == 0 {
-		return errors.NewExistErr(fmt.Sprintf("recipe with ID %s does not exist", recipe.ID))
+		return errors.NewExistErr(false)
 	}
 
 	// prepare to update
@@ -93,6 +94,7 @@ func (rProxy *Proxy) UpdateRecipe(recipe *recipe.Recipe) error {
 	return nil
 }
 
+// fixme in case a recipe does not exist: return an existError (new to be created)
 func (rProxy *Proxy) DeleteRecipe(recipeId string) error {
 
 	// check whether the recipe has been rated, in that case the rating is also deleted
@@ -109,7 +111,7 @@ func (rProxy *Proxy) DeleteRecipe(recipeId string) error {
 	}
 
 	if result == 0 {
-		return errors.NewExistErr("")
+		return errors.NewExistErr(false)
 	}
 
 	if exists == 1 {

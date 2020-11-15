@@ -31,7 +31,7 @@ func NewRecipe(rcpDb db.Recipe) *rcp {
 
 func (r *rcp) GetByID(ID string) (*r.Recipe, error) {
 	if !validateRcpID(ID) {
-		return nil, errors.NewUserErr("invalid ID format")
+		return nil, errors.NewInputError("Invalid ID format", nil)
 	}
 	rcp, err := r.rcpDb.GetRecipeById(ID)
 	if err != nil {
@@ -52,7 +52,7 @@ func (r *rcp) ListAll() ([]*r.Recipe, error) {
 
 func (r *rcp) Create(recipe *r.Recipe) error {
 	if v := validateRecipeInput(recipe); len(v) > 0 {
-		return errors.NewInvalidParamsErr(v)
+		return errors.NewInputError("Invalid input parameters", v)
 	}
 	if err := r.rcpDb.CreateRecipe(recipe); err != nil {
 		return err
@@ -63,14 +63,14 @@ func (r *rcp) Create(recipe *r.Recipe) error {
 
 func (r *rcp) Update(ID string, recipe *r.Recipe) error {
 	if !validateRcpID(ID) {
-		return errors.NewUserErr("invalid ID format")
+		return errors.NewInputError("Invalid ID format", nil)
 	}
 	if ID != recipe.ID {
-		return errors.NewUserErr("ID param and recipe ID do not match")
+		return errors.NewInputError("ID param and recipe ID do not match", nil)
 	}
 
 	if v := validateRecipeInput(recipe); len(v) > 0 {
-		return errors.NewInvalidParamsErr(v)
+		return errors.NewInputError("Invalid input parameters", v)
 	}
 	err := r.rcpDb.UpdateRecipe(recipe)
 	if err != nil {
@@ -82,7 +82,7 @@ func (r *rcp) Update(ID string, recipe *r.Recipe) error {
 
 func (r *rcp) Delete(recipeID string) error {
 	if !validateRcpID(recipeID) {
-		return errors.NewUserErr("invalid ID format")
+		return errors.NewInputError("Invalid ID format", nil)
 	}
 	if err := r.rcpDb.DeleteRecipe(recipeID); err != nil {
 		return err

@@ -1,7 +1,6 @@
 package service
 
 import (
-	e "errors"
 	"github.com/rnov/Go-REST/pkg/errors"
 	"github.com/rnov/Go-REST/pkg/rate"
 	"strings"
@@ -45,14 +44,14 @@ func TestService_Rate(t *testing.T) {
 				Note: 5,
 			},
 			inputID:     "12sw2329cwme9",
-			expectedErr: e.New("invalid parameters"),
+			expectedErr: errors.NewInputError("Invalid input parameters", nil),
 		},
 		{
 			name: "error validating range: note out of range",
 			inputRate: rate.Rate{
 				Note: 100,
 			},
-			expectedErr: e.New("invalid parameters"),
+			expectedErr: errors.NewInputError("Invalid input parameters", nil),
 		},
 		{
 			name: "error DB",

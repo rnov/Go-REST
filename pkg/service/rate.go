@@ -2,11 +2,11 @@ package service
 
 import (
 	"github.com/rnov/Go-REST/pkg/db"
-	r "github.com/rnov/Go-REST/pkg/rate"
 	"github.com/rnov/Go-REST/pkg/errors"
+	r "github.com/rnov/Go-REST/pkg/rate"
 )
 
-type Rater interface {
+type RateSrv interface {
 	Rate(id string, rate *r.Rate) error
 }
 
@@ -24,7 +24,7 @@ func NewRate(rateDb db.Rate) *Service {
 
 func (r *Service) Rate(id string, rate *r.Rate) error {
 	if v := validateRateDataRange(id, rate); len(v) > 0 {
-		return errors.NewInvalidParamsErr(v)
+		return errors.NewInputError("Invalid input parameters", v)
 	}
 	if err := r.rateDb.RateRecipe(id, rate); err != nil {
 		return err

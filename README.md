@@ -15,7 +15,7 @@ This simple Api REST is used to CRUD restaurant's recipes, as today has only 6 c
 | Get    | `GET`        | `/recipes/{id}`        | ✘         |
 | Update | `PUT/PATCH`  | `/recipes/{id}`        | ✓         |
 | Delete | `DELETE`     | `/recipes/{id}`        | ✓         |
-| Rate   | `POST`       | `/recipes/{id}/rating` | ✘         |
+| Rate   | `POST`       | `/recipes/{id}/rate`   | ✘         |
 
 
 I tried to keep the code as vanilla as possible - avoiding installing many third party packages, some of them are:

@@ -41,8 +41,7 @@ func NewDbClient(cfg config.DBConfig) (Client, error) {
 			return nil, err
 		}
 		//fmt.Println(pong)
-		// create redisProxy with the given client (master)
 		return redis.NewRedisProxy(redisClient), nil
 	}
-	return nil, errors.NewNotFoundErr()
+	return nil, errors.NewExistErr(false)
 }
