@@ -1,5 +1,5 @@
 # Go-REST
-
+[![Coverage Status](https://coveralls.io/repos/github/rnov/Go-REST/badge.svg?branch=master)](https://coveralls.io/github/rnov/Go-REST?branch=fix/code-refactor)
 ### Description:
 
 An api REST in go - a toy project - implementing SOLID principles and applying best practices whenever possible,

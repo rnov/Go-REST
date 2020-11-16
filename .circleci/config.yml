@@ -1,0 +1,24 @@
+version: 2
+jobs:
+  build:
+    working_directory: /go/src/github.com/rnov/Go-REST
+    docker:
+      - image: golang:1
+        environment:
+          CIRCLE_COVERAGE_REPORT: /tmp/test-output
+    steps:
+      - checkout
+      - run:
+          name: Get Dependencies
+          command: |
+            GO111MODULE=off go get github.com/mattn/goveralls
+      - run:
+          name: Create Output Dirs
+          command: |
+            mkdir -p ${CIRCLE_COVERAGE_REPORT}
+      - run:
+          name: Run Unit tests
+          command: go test -mod=readonly -race -cover -coverprofile=${CIRCLE_COVERAGE_REPORT}/test-results.out ./...
+      - run:
+          name: Upload coverage
+          command: goveralls -coverprofile=${CIRCLE_COVERAGE_REPORT}/test-results.out -service=circle-ci -repotoken=${COVERALLS_REPO_TOKEN}
