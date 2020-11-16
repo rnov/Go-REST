@@ -1,24 +1,24 @@
 package service
 
 import (
-	"fmt"
-	"github.com/rnov/Go-REST/pkg/errors"
-	"github.com/rnov/Go-REST/pkg/recipe"
 	"reflect"
 	"testing"
+
+	"github.com/rnov/Go-REST/pkg/errors"
+	"github.com/rnov/Go-REST/pkg/recipe"
 )
 
 type recipeDBMock struct {
-	getRecipeById func(recipeId string) (*recipe.Recipe, error)
+	getRecipeByID func(recipeId string) (*recipe.Recipe, error)
 	getAllRecipes func() ([]*recipe.Recipe, error)
 	createRecipe  func(recipe *recipe.Recipe) error
 	updateRecipe  func(recipe *recipe.Recipe) error
 	deleteRecipe  func(recipeId string) error
 }
 
-func (rm *recipeDBMock) GetRecipeByID(recipeId string) (*recipe.Recipe, error) {
-	if rm.getRecipeById != nil {
-		return rm.getRecipeById(recipeId)
+func (rm *recipeDBMock) GetRecipeByID(recipeID string) (*recipe.Recipe, error) {
+	if rm.getRecipeByID != nil {
+		return rm.getRecipeByID(recipeID)
 	}
 	panic("Not implemented")
 }
@@ -44,9 +44,9 @@ func (rm *recipeDBMock) UpdateRecipe(recipe *recipe.Recipe) error {
 	panic("Not implemented")
 }
 
-func (rm *recipeDBMock) DeleteRecipe(recipeId string) error {
+func (rm *recipeDBMock) DeleteRecipe(recipeID string) error {
 	if rm.deleteRecipe != nil {
-		return rm.deleteRecipe(recipeId)
+		return rm.deleteRecipe(recipeID)
 	}
 	panic("Not implemented")
 }
@@ -62,7 +62,7 @@ func TestRcp_GetByID(t *testing.T) {
 		{
 			name: "successful retrieval",
 			rcpDB: recipeDBMock{
-				getRecipeById: func(recipeId string) (*recipe.Recipe, error) {
+				getRecipeByID: func(recipeId string) (*recipe.Recipe, error) {
 					return &recipe.Recipe{
 						ID:         "654321",
 						Name:       "qwerty",
@@ -85,7 +85,7 @@ func TestRcp_GetByID(t *testing.T) {
 		{
 			name: "error recipe not found",
 			rcpDB: recipeDBMock{
-				getRecipeById: func(recipeId string) (*recipe.Recipe, error) {
+				getRecipeByID: func(recipeId string) (*recipe.Recipe, error) {
 					return nil, errors.NewExistErr(false)
 				},
 			},
@@ -102,13 +102,13 @@ func TestRcp_GetByID(t *testing.T) {
 		{
 			name: "error DB issue",
 			rcpDB: recipeDBMock{
-				getRecipeById: func(recipeId string) (*recipe.Recipe, error) {
-					return nil, errors.NewDBErr(fmt.Sprint("error parsing recipe from DB"))
+				getRecipeByID: func(recipeId string) (*recipe.Recipe, error) {
+					return nil, errors.NewDBErr("error parsing recipe from DB")
 				},
 			},
 			inputRcpID:  "654321",
 			expectedRcp: nil,
-			expectedErr: errors.NewDBErr(fmt.Sprint("error parsing recipe from DB")),
+			expectedErr: errors.NewDBErr("error parsing recipe from DB"),
 		},
 	}
 
@@ -186,11 +186,11 @@ func TestRcp_ListAll(t *testing.T) {
 			name: "error DB issue",
 			rcpDB: recipeDBMock{
 				getAllRecipes: func() ([]*recipe.Recipe, error) {
-					return nil, errors.NewDBErr(fmt.Sprint("error parsing recipe from DB"))
+					return nil, errors.NewDBErr("error parsing recipe from DB")
 				},
 			},
 			expectedRcps: nil,
-			expectedErr:  errors.NewDBErr(fmt.Sprint("error parsing recipe from DB")),
+			expectedErr:  errors.NewDBErr("error parsing recipe from DB"),
 		},
 	}
 

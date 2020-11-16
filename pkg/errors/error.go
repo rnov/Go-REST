@@ -2,7 +2,6 @@ package errors
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
 )
 
@@ -42,12 +41,11 @@ type FailedAuthErr struct {
 }
 
 func (myErr *FailedAuthErr) Error() string {
-	return fmt.Sprintf("Failed validation atempt ")
+	return "Failed validation attempt "
 }
 
 func NewFailedAuthErr() *FailedAuthErr {
-	return &FailedAuthErr{
-	}
+	return &FailedAuthErr{}
 }
 
 // Error for user Invalid input parameterss - such errors are not being logged their purpose is to inform user of the missing/wrong data
@@ -88,7 +86,6 @@ func NewExistErr(exist bool) *ExistErr {
 }
 
 func BuildResponse(w http.ResponseWriter, method string, err error) {
-
 	switch e := err.(type) {
 	case *FailedAuthErr:
 		w.WriteHeader(http.StatusUnauthorized)

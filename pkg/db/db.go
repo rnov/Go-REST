@@ -1,7 +1,8 @@
 package db
 
 import (
-	e "errors"
+	"errors"
+
 	"github.com/rnov/Go-REST/pkg/config"
 	"github.com/rnov/Go-REST/pkg/db/redis"
 	"github.com/rnov/Go-REST/pkg/rate"
@@ -9,15 +10,15 @@ import (
 )
 
 type Recipe interface {
-	GetRecipeByID(recipeId string) (*rcp.Recipe, error)
+	GetRecipeByID(recipeID string) (*rcp.Recipe, error)
 	GetAllRecipes() ([]*rcp.Recipe, error)
 	CreateRecipe(recipe *rcp.Recipe) error
 	UpdateRecipe(recipe *rcp.Recipe) error
-	DeleteRecipe(recipeId string) error
+	DeleteRecipe(recipeID string) error
 }
 
 type Rate interface {
-	RateRecipe(recipeId string, rate *rate.Rate) error
+	RateRecipe(recipeID string, rate *rate.Rate) error
 }
 
 type Auth interface {
@@ -30,12 +31,11 @@ type Client interface {
 	Auth
 }
 
-func NewDbClient(cfg config.DBConfig) (Client, error) {
-
+func NewClient(cfg config.DBConfig) (Client, error) {
 	switch cfg.Type {
 	case "redis":
 		// note: check ping pong etc - consult main
-		redisClient := redis.NewRedisClient(cfg.Host, cfg.Port, cfg.Db)
+		redisClient := redis.NewRedisClient(cfg.Host, cfg.Port, cfg.DB)
 		//check connection with redis
 		if _, err := redisClient.Ping().Result(); err != nil {
 			return nil, err
@@ -43,5 +43,5 @@ func NewDbClient(cfg config.DBConfig) (Client, error) {
 		//fmt.Println(pong)
 		return redis.NewRedisProxy(redisClient), nil
 	}
-	return nil, e.New("database does not exist")
+	return nil, errors.New("database does not exist")
 }

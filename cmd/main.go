@@ -1,17 +1,17 @@
 package main
 
 import (
+	"fmt"
+	"log"
+	"net/http"
+	"os"
+
 	"github.com/rnov/Go-REST/pkg/auth"
+	infra "github.com/rnov/Go-REST/pkg/config"
 	"github.com/rnov/Go-REST/pkg/db"
 	"github.com/rnov/Go-REST/pkg/http/rest"
-	"github.com/rnov/Go-REST/pkg/service"
-	"net/http"
-
-	"fmt"
-	infra "github.com/rnov/Go-REST/pkg/config"
 	"github.com/rnov/Go-REST/pkg/logger"
-	"log"
-	"os"
+	"github.com/rnov/Go-REST/pkg/service"
 )
 
 const (
@@ -29,7 +29,7 @@ func main() {
 		log.Fatal("Empty Env Variable")
 	}
 
-	cfg, err := infra.LoadApiConfig(envConfigPath)
+	cfg, err := infra.LoadAPIConfig(envConfigPath)
 
 	if err != nil {
 		log.Fatal(err)
@@ -38,10 +38,10 @@ func main() {
 	// create RecipeSrv custom logger
 	//l := logger.NewLogger(cfg.RedisLog, cfg.LogsPath)
 	l := logger.NewLogger()
-	fmt.Sprint(l)
+	//fmt.Sprint(l)
 
 	// create DB client
-	dbClient, err := db.NewDbClient(cfg.DBCfg)
+	dbClient, err := db.NewClient(cfg.DBCfg)
 	if err != nil {
 		log.Fatal(err.Error())
 	}
@@ -62,5 +62,4 @@ func main() {
 
 	// Fire up the server
 	log.Fatal(http.ListenAndServe(cfg.Server.Address, r))
-
 }

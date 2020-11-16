@@ -18,7 +18,6 @@ func NewRedisProxy(client *redis.Client) *Proxy {
 }
 
 func NewRedisClient(host string, port int, db int) *redis.Client {
-
 	client := redis.NewClient(&redis.Options{
 		Addr:     fmt.Sprintf("%s:%d", host, port),
 		Password: "",

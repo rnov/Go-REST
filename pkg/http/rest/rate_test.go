@@ -3,17 +3,19 @@ package rest
 import (
 	"bytes"
 	"encoding/json"
-	"github.com/gorilla/mux"
-	"github.com/rnov/Go-REST/pkg/errors"
-	"github.com/rnov/Go-REST/pkg/logger"
-	"github.com/rnov/Go-REST/pkg/rate"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	"github.com/gorilla/mux"
+
+	"github.com/rnov/Go-REST/pkg/errors"
+	"github.com/rnov/Go-REST/pkg/logger"
+	"github.com/rnov/Go-REST/pkg/rate"
 )
 
 type rateServiceMock struct {
-	rate func(id string, r *rate.Rate) error
+	rate func(ID string, r *rate.Rate) error
 }
 
 func (rsm *rateServiceMock) Rate(ID string, r *rate.Rate) error {
@@ -25,29 +27,29 @@ func (rsm *rateServiceMock) Rate(ID string, r *rate.Rate) error {
 
 func TestRateHandler_RateRecipe(t *testing.T) {
 	tests := []struct {
-		name            string
-		url             string
-		requestPayload  *rate.Rate
-		service         rateServiceMock
-		status          int
+		name           string
+		url            string
+		requestPayload *rate.Rate
+		service        rateServiceMock
+		status         int
 	}{
 		{
-			name:    "successful rate",
-			url:     "/recipes/5f10223c/rate",
+			name:           "successful rate",
+			url:            "/recipes/5f10223c/rate",
 			requestPayload: &rate.Rate{Note: 5},
 			service: rateServiceMock{
-				rate: func(id string, r *rate.Rate) error {
+				rate: func(ID string, r *rate.Rate) error {
 					return nil
 				},
 			},
-			status:       http.StatusOK,
+			status: http.StatusOK,
 		},
 		{
 			name:           "error - Invalid Data Range",
 			url:            "/recipes/5f10223c/rate",
 			requestPayload: &rate.Rate{Note: 10},
 			service: rateServiceMock{
-				rate: func(id string, r *rate.Rate) error {
+				rate: func(ID string, r *rate.Rate) error {
 					v := make(map[string]string)
 					v[errors.Rate] = errors.OutOfRange
 					return errors.NewInputError("Invalid input parameters", v)
@@ -61,7 +63,6 @@ func TestRateHandler_RateRecipe(t *testing.T) {
 	// pass 'nil' as the third parameter.
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-
 			l := logger.NewLogger()
 			var jsonBody []byte
 			if test.requestPayload == nil {
@@ -85,7 +86,7 @@ func TestRateHandler_RateRecipe(t *testing.T) {
 			// We create a ResponseRecorder (which satisfies http.ResponseWriter) to record the response.
 			rr := httptest.NewRecorder()
 			servicesRouter := mux.NewRouter()
-			servicesRouter.HandleFunc("/recipes/{id}/rate", rh.RateRecipe).Methods("POST")
+			servicesRouter.HandleFunc("/recipes/{ID}/rate", rh.RateRecipe).Methods("POST")
 
 			// Our handlers satisfy http.Handler, so we can call their ServeHTTP method
 			// directly and pass in our Request and ResponseRecorder.

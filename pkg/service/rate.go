@@ -6,27 +6,27 @@ import (
 	r "github.com/rnov/Go-REST/pkg/rate"
 )
 
-type RateSrv interface {
+type Rater interface {
 	Rate(ID string, rate *r.Rate) error
 }
 
-type Service struct {
-	rateDb db.Rate
+type Rate struct {
+	rateDB db.Rate
 	//// add more func fields - there used to be a logger-
 }
 
-func NewRate(rateDb db.Rate) *Service {
-	rateSrv := &Service{
-		rateDb: rateDb,
+func NewRate(rateDB db.Rate) *Rate {
+	rateSrv := &Rate{
+		rateDB: rateDB,
 	}
 	return rateSrv
 }
 
-func (r *Service) Rate(ID string, rate *r.Rate) error {
+func (r *Rate) Rate(ID string, rate *r.Rate) error {
 	if v := validateRateDataRange(ID, rate); len(v) > 0 {
 		return errors.NewInputError("Invalid input parameters", v)
 	}
-	if err := r.rateDb.RateRecipe(ID, rate); err != nil {
+	if err := r.rateDB.RateRecipe(ID, rate); err != nil {
 		return err
 	}
 

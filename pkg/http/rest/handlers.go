@@ -1,10 +1,12 @@
 package rest
 
 import (
+	"net/http"
+
 	"github.com/gorilla/mux"
+
 	"github.com/rnov/Go-REST/pkg/auth"
 	mid "github.com/rnov/Go-REST/pkg/http/middleware"
-	"net/http"
 )
 
 type RecipeAPI interface {
@@ -20,25 +22,22 @@ type RateAPI interface {
 }
 
 func NewRouter(rcpHand *RecipeHandler, rateHand *RateHandler, auth *auth.Auth) *mux.Router {
-	ApiRestRouter := mux.NewRouter()
-	configRecipeEndpoints(ApiRestRouter, rcpHand, auth)
-	configRateEndPoints(ApiRestRouter, rateHand)
+	APIRESTRouter := mux.NewRouter()
+	configRecipeEndpoints(APIRESTRouter, rcpHand, auth)
+	configRateEndPoints(APIRESTRouter, rateHand)
 
-	return ApiRestRouter
+	return APIRESTRouter
 }
 
 // note private functions needed to configure route's endpoints, used in NewRouter
 func configRecipeEndpoints(r *mux.Router, rcpHand *RecipeHandler, auth *auth.Auth) {
-
-	r.HandleFunc("/recipes/{id}", rcpHand.GetRecipeByID).Methods("GET")
+	r.HandleFunc("/recipes/{ID}", rcpHand.GetRecipeByID).Methods("GET")
 	r.HandleFunc("/recipes", rcpHand.GetAllRecipes).Methods("GET")
-	r.HandleFunc("/recipes/{id}", mid.Authentication(auth, rcpHand.DeleteRecipe)).Methods("DELETE")
+	r.HandleFunc("/recipes/{ID}", mid.Authentication(auth, rcpHand.DeleteRecipe)).Methods("DELETE")
 	r.HandleFunc("/recipes", mid.Authentication(auth, rcpHand.CreateRecipe)).Methods("POST")
-	r.HandleFunc("/recipes/{id}", mid.Authentication(auth, rcpHand.UpdateRecipe)).Methods("PUT")
+	r.HandleFunc("/recipes/{ID}", mid.Authentication(auth, rcpHand.UpdateRecipe)).Methods("PUT")
 }
 
 func configRateEndPoints(r *mux.Router, rateHand *RateHandler) {
-	r.HandleFunc("/recipes/{id}/rate", rateHand.RateRecipe).Methods("POST")
+	r.HandleFunc("/recipes/{ID}/rate", rateHand.RateRecipe).Methods("POST")
 }
-
-

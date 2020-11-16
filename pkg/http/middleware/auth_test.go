@@ -1,12 +1,13 @@
 package middleware
 
 import (
-	"github.com/gorilla/mux"
-	"github.com/rnov/Go-REST/pkg/auth"
-	"github.com/rnov/Go-REST/pkg/errors"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	"github.com/gorilla/mux"
+	"github.com/rnov/Go-REST/pkg/auth"
+	"github.com/rnov/Go-REST/pkg/errors"
 )
 
 type authDBMock struct {

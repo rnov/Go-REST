@@ -1,5 +1,6 @@
 # Go-REST
 [![Coverage Status](https://coveralls.io/repos/github/rnov/Go-REST/badge.svg?branch=master)](https://coveralls.io/github/rnov/Go-REST?branch=fix/code-refactor)
+[![Go Report Card](https://goreportcard.com/badge/github.com/rnov/Go-REST)](https://goreportcard.com/report/github.com/rnov/Go-REST)
 ### Description:
 
 An api REST in go - a toy project - implementing SOLID principles and applying best practices whenever possible,
@@ -12,10 +13,10 @@ This simple Api REST is used to CRUD restaurant's recipes, as today has only 6 c
 | :---:    | :---:      | :---:                 | :---:       |
 | List   | `GET`        | `/recipes`             | ✘         |
 | Create | `POST`       | `/recipes`             | ✓         |
-| Get    | `GET`        | `/recipes/{id}`        | ✘         |
-| Update | `PUT/PATCH`  | `/recipes/{id}`        | ✓         |
-| Delete | `DELETE`     | `/recipes/{id}`        | ✓         |
-| Rate   | `POST`       | `/recipes/{id}/rate`   | ✘         |
+| Get    | `GET`        | `/recipes/{ID}`        | ✘         |
+| Update | `PUT/PATCH`  | `/recipes/{ID}`        | ✓         |
+| Delete | `DELETE`     | `/recipes/{ID}`        | ✓         |
+| Rate   | `POST`       | `/recipes/{ID}/rate`   | ✘         |
 
 
 I tried to keep the code as vanilla as possible - avoiding installing many third party packages, some of them are:

@@ -1,7 +1,7 @@
 package recipe
 
 type Recipe struct {
-	ID         string `json:"id"`
+	ID         string `json:"ID"`
 	Name       string `json:"name"`
 	PrepTime   int    `json:"prepTime"`
 	Difficulty int    `json:"difficulty"`

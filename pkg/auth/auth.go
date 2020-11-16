@@ -1,24 +1,26 @@
 package auth
 
 import (
-	"github.com/rnov/Go-REST/pkg/db"
-	"golang.org/x/crypto/bcrypt"
 	"log"
+
+	"golang.org/x/crypto/bcrypt"
+
+	"github.com/rnov/Go-REST/pkg/db"
 )
 
 type Auth struct {
-	Db db.Auth
+	DB db.Auth
 }
 
 func NewAuth(db db.Auth) *Auth {
 	return &Auth{
-		Db: db,
+		DB: db,
 	}
 }
 
 func (a Auth) Validate(ba string) error {
 	encodedAuth := encode(ba)
-	if err := a.Db.CheckAuth(encodedAuth); err != nil {
+	if err := a.DB.CheckAuth(encodedAuth); err != nil {
 		return err
 	}
 	return nil

@@ -3,14 +3,16 @@ package rest
 import (
 	"bytes"
 	"encoding/json"
-	"github.com/gorilla/mux"
-	"github.com/rnov/Go-REST/pkg/errors"
-	"github.com/rnov/Go-REST/pkg/logger"
-	r "github.com/rnov/Go-REST/pkg/recipe"
 	"net/http"
 	"net/http/httptest"
 	"reflect"
 	"testing"
+
+	"github.com/gorilla/mux"
+
+	"github.com/rnov/Go-REST/pkg/errors"
+	"github.com/rnov/Go-REST/pkg/logger"
+	r "github.com/rnov/Go-REST/pkg/recipe"
 )
 
 type RecipeServiceMock struct {
@@ -111,7 +113,6 @@ func TestRecipeHandler_GetRecipeByID(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-
 			l := logger.NewLogger()
 			req, err := http.NewRequest("GET", test.url, nil)
 			if err != nil {
@@ -221,7 +222,6 @@ func TestRecipeHandler_GetAllRecipes(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-
 			l := logger.NewLogger()
 			req, err := http.NewRequest("GET", test.url, nil)
 			if err != nil {
@@ -314,7 +314,6 @@ func TestRecipeHandler_CreateRecipe(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-
 			l := logger.NewLogger()
 			var jsonBody []byte
 			if test.requestPayload == nil {
@@ -435,7 +434,6 @@ func TestRecipeHandler_UpdateRecipe(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-
 			l := logger.NewLogger()
 			var jsonBody []byte
 			if test.requestPayload == nil {
@@ -530,7 +528,6 @@ func TestRecipeHandler_DeleteRecipe(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-
 			l := logger.NewLogger()
 			req, err := http.NewRequest("DELETE", test.url, nil)
 			if err != nil {

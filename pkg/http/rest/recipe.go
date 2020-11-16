@@ -3,12 +3,14 @@ package rest
 import (
 	"encoding/json"
 	"fmt"
+	"net/http"
+
 	"github.com/gorilla/mux"
+
 	"github.com/rnov/Go-REST/pkg/errors"
 	log "github.com/rnov/Go-REST/pkg/logger"
 	"github.com/rnov/Go-REST/pkg/recipe"
 	"github.com/rnov/Go-REST/pkg/service"
-	"net/http"
 )
 
 const (
@@ -17,12 +19,12 @@ const (
 
 // interface, could get any controller that implements the interface (redis, mongo, psql ...)
 type RecipeHandler struct {
-	rcpSrv service.RcpSrv
+	rcpSrv service.RecipeMng
 	logger log.Loggers
 	// add a logger ? be able to log at handler level ?? move from service and log in here, good idea ?
 }
 
-func NewRecipeHandler(rcpSrv service.RcpSrv, l log.Loggers) *RecipeHandler {
+func NewRecipeHandler(rcpSrv service.RecipeMng, l log.Loggers) *RecipeHandler {
 	recipeHandler := &RecipeHandler{
 		rcpSrv: rcpSrv,
 		logger: l,
@@ -31,7 +33,6 @@ func NewRecipeHandler(rcpSrv service.RcpSrv, l log.Loggers) *RecipeHandler {
 }
 
 func (rh *RecipeHandler) GetRecipeByID(w http.ResponseWriter, r *http.Request) {
-
 	params := mux.Vars(r)
 	ID := params[recipeID]
 	if len(ID) == 0 {
@@ -45,7 +46,7 @@ func (rh *RecipeHandler) GetRecipeByID(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Marshal provided interface into JSON structure
-	recipeJson, err := json.Marshal(rcp)
+	recipeJSON, err := json.Marshal(rcp)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
@@ -54,26 +55,24 @@ func (rh *RecipeHandler) GetRecipeByID(w http.ResponseWriter, r *http.Request) {
 	// Write content-type, status code, requestPayload
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	fmt.Fprintf(w, "%s", recipeJson)
+	fmt.Fprintf(w, "%s", recipeJSON)
 }
 
 func (rh *RecipeHandler) GetAllRecipes(w http.ResponseWriter, r *http.Request) {
-
 	rcps, err := rh.rcpSrv.ListAll()
 	if err != nil {
 		errors.BuildResponse(w, r.Method, err)
 	}
-	var recipesJson []byte
+	var recipesJSON []byte
 	w.Header().Set("Content-Type", "application/json")
-	recipesJson, jsonErr := json.Marshal(rcps)
-	if _, parseErr := w.Write(recipesJson); jsonErr != nil || parseErr != nil {
+	recipesJSON, jsonErr := json.Marshal(rcps)
+	if _, parseErr := w.Write(recipesJSON); jsonErr != nil || parseErr != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 }
 
 func (rh *RecipeHandler) CreateRecipe(w http.ResponseWriter, r *http.Request) {
-
 	rcp := &recipe.Recipe{}
 	dec := json.NewDecoder(r.Body)
 	dec.DisallowUnknownFields()

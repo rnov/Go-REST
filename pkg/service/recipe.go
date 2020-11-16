@@ -1,39 +1,40 @@
 package service
 
 import (
+	"regexp"
+
 	"github.com/rnov/Go-REST/pkg/db"
 	"github.com/rnov/Go-REST/pkg/errors"
 	r "github.com/rnov/Go-REST/pkg/recipe"
-	"regexp"
 )
 
-type RcpSrv interface {
-	GetByID(recipeId string) (*r.Recipe, error)
+type RecipeMng interface {
+	GetByID(recipeID string) (*r.Recipe, error)
 	ListAll() ([]*r.Recipe, error)
 	Create(recipe *r.Recipe) error
 	Update(ID string, recipe *r.Recipe) error
-	Delete(recipeId string) error
+	Delete(recipeID string) error
 }
 
 // this is a must, struct can not implement interface from different package.
-type rcp struct {
-	rcpDb db.Recipe
+type Recipe struct {
+	rcpDB db.Recipe
 	//logger log.Loggers
 	// add more func fields
 }
 
-func NewRecipe(rcpDb db.Recipe) *rcp {
-	recipeSrv := &rcp{
-		rcpDb: rcpDb,
+func NewRecipe(rcpDB db.Recipe) *Recipe {
+	recipeSrv := &Recipe{
+		rcpDB: rcpDB,
 	}
 	return recipeSrv
 }
 
-func (r *rcp) GetByID(ID string) (*r.Recipe, error) {
+func (r *Recipe) GetByID(ID string) (*r.Recipe, error) {
 	if !validateRcpID(ID) {
 		return nil, errors.NewInputError("Invalid ID format", nil)
 	}
-	rcp, err := r.rcpDb.GetRecipeByID(ID)
+	rcp, err := r.rcpDB.GetRecipeByID(ID)
 	if err != nil {
 		return nil, err
 	}
@@ -41,8 +42,8 @@ func (r *rcp) GetByID(ID string) (*r.Recipe, error) {
 	return rcp, nil
 }
 
-func (r *rcp) ListAll() ([]*r.Recipe, error) {
-	recipes, err := r.rcpDb.GetAllRecipes()
+func (r *Recipe) ListAll() ([]*r.Recipe, error) {
+	recipes, err := r.rcpDB.GetAllRecipes()
 	if err != nil {
 		return nil, err
 	}
@@ -50,18 +51,18 @@ func (r *rcp) ListAll() ([]*r.Recipe, error) {
 	return recipes, nil
 }
 
-func (r *rcp) Create(recipe *r.Recipe) error {
+func (r *Recipe) Create(recipe *r.Recipe) error {
 	if v := validateRecipeInput(recipe); len(v) > 0 {
 		return errors.NewInputError("Invalid input parameters", v)
 	}
-	if err := r.rcpDb.CreateRecipe(recipe); err != nil {
+	if err := r.rcpDB.CreateRecipe(recipe); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func (r *rcp) Update(ID string, recipe *r.Recipe) error {
+func (r *Recipe) Update(ID string, recipe *r.Recipe) error {
 	if !validateRcpID(ID) {
 		return errors.NewInputError("Invalid ID format", nil)
 	}
@@ -72,7 +73,7 @@ func (r *rcp) Update(ID string, recipe *r.Recipe) error {
 	if v := validateRecipeInput(recipe); len(v) > 0 {
 		return errors.NewInputError("Invalid input parameters", v)
 	}
-	err := r.rcpDb.UpdateRecipe(recipe)
+	err := r.rcpDB.UpdateRecipe(recipe)
 	if err != nil {
 		return err
 	}
@@ -80,18 +81,17 @@ func (r *rcp) Update(ID string, recipe *r.Recipe) error {
 	return nil
 }
 
-func (r *rcp) Delete(recipeID string) error {
+func (r *Recipe) Delete(recipeID string) error {
 	if !validateRcpID(recipeID) {
 		return errors.NewInputError("Invalid ID format", nil)
 	}
-	if err := r.rcpDb.DeleteRecipe(recipeID); err != nil {
+	if err := r.rcpDB.DeleteRecipe(recipeID); err != nil {
 		return err
 	}
 	return nil
 }
 
 func validateRecipeInput(recipe *r.Recipe) map[string]string {
-
 	valid := make(map[string]string)
 
 	if recipe.Difficulty <= 1 || recipe.Difficulty > 3 {

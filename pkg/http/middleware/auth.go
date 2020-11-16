@@ -1,10 +1,11 @@
 package middleware
 
 import (
-	"github.com/rnov/Go-REST/pkg/auth"
-	"github.com/rnov/Go-REST/pkg/errors"
 	"net/http"
 	"strings"
+
+	"github.com/rnov/Go-REST/pkg/auth"
+	"github.com/rnov/Go-REST/pkg/errors"
 )
 
 const (
@@ -14,7 +15,6 @@ const (
 
 func Authentication(auth *auth.Auth, next func(http.ResponseWriter, *http.Request)) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
-
 		var basicAuth string
 		ah := r.Header.Get(authHeader)
 		basicAuth, valid := validateAuthStructure(ah)

@@ -7,10 +7,8 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-func LoadApiConfig(confPath string) (ApiConfig, error) {
-
-	var config ApiConfig
-
+func LoadAPIConfig(confPath string) (APIConfig, error) {
+	var config APIConfig
 	data, err := ioutil.ReadFile(confPath)
 	if err != nil {
 		log.Fatal("error reading configuration " + confPath)
@@ -29,7 +27,7 @@ type DBConfig struct {
 	Type string `yaml:"type"`
 	Host string `yaml:"host"`
 	Port int    `yaml:"port"`
-	Db   int    `yaml:"dbInterface"`
+	DB   int    `yaml:"dbInterface"`
 }
 
 type LoggerConfig struct {
@@ -38,7 +36,7 @@ type LoggerConfig struct {
 	Active bool   `yaml:"active"`
 }
 
-type ApiConfig struct {
+type APIConfig struct {
 	Server   Server       `yaml:"server"`
 	DBCfg    DBConfig     `yaml:"dbConfig"`
 	LogsPath string       `yaml:"loggers_paths"`

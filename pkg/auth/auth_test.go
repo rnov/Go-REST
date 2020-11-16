@@ -2,8 +2,9 @@ package auth
 
 import (
 	e "errors"
-	"github.com/rnov/Go-REST/pkg/errors"
 	"testing"
+
+	"github.com/rnov/Go-REST/pkg/errors"
 )
 
 type authDBMock struct {

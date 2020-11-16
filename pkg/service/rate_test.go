@@ -1,19 +1,20 @@
 package service
 
 import (
-	"github.com/rnov/Go-REST/pkg/errors"
-	"github.com/rnov/Go-REST/pkg/rate"
 	"strings"
 	"testing"
+
+	"github.com/rnov/Go-REST/pkg/errors"
+	"github.com/rnov/Go-REST/pkg/rate"
 )
 
 type rateDBMock struct {
 	rateRecipe func(recipeId string, rate *rate.Rate) error
 }
 
-func (rm *rateDBMock) RateRecipe(recipeId string, rate *rate.Rate) error {
+func (rm *rateDBMock) RateRecipe(recipeID string, rate *rate.Rate) error {
 	if rm.rateRecipe != nil {
-		return rm.rateRecipe(recipeId, rate)
+		return rm.rateRecipe(recipeID, rate)
 	}
 	panic("Not implemented")
 }

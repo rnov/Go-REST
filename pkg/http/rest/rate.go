@@ -2,20 +2,22 @@ package rest
 
 import (
 	"encoding/json"
+	"net/http"
+
 	"github.com/gorilla/mux"
+
 	"github.com/rnov/Go-REST/pkg/errors"
 	log "github.com/rnov/Go-REST/pkg/logger"
 	"github.com/rnov/Go-REST/pkg/rate"
 	"github.com/rnov/Go-REST/pkg/service"
-	"net/http"
 )
 
 type RateHandler struct {
-	rateSrv service.RateSrv
+	rateSrv service.Rater
 	logger  log.Loggers
 }
 
-func NewRateHandler(srv service.RateSrv, l log.Loggers) *RateHandler {
+func NewRateHandler(srv service.Rater, l log.Loggers) *RateHandler {
 	rateHandler := &RateHandler{
 		rateSrv: srv,
 		logger:  l,
@@ -24,7 +26,7 @@ func NewRateHandler(srv service.RateSrv, l log.Loggers) *RateHandler {
 }
 
 func (rh *RateHandler) RateRecipe(w http.ResponseWriter, r *http.Request) {
-	ID := mux.Vars(r)["id"]
+	ID := mux.Vars(r)["ID"]
 	if len(ID) == 0 {
 		w.WriteHeader(http.StatusBadRequest)
 		return
