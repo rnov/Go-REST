@@ -1,6 +1,6 @@
 # Go-REST
 [![CircleCI](https://circleci.com/gh/rnov/Go-REST/tree/fix%2Fcode-refactor.svg?style=svg)](https://circleci.com/gh/rnov/Go-REST/tree/fix%2Fcode-refactor)
-[![Coverage Status](https://coveralls.io/repos/github/rnov/Go-REST/badge.svg?branch=fix%2Fcode-refactor)](https://coveralls.io/github/rnov/Go-REST?branch=fix%2Fcode-refactor)
+[![Coverage Status](https://coveralls.io/repos/github/rnov/Go-REST/badge.svg?branch=fix/code-refactor)](https://coveralls.io/github/rnov/Go-REST?branch=fix/code-refactor)
 [![Go Report Card](https://goreportcard.com/badge/github.com/rnov/Go-REST)](https://goreportcard.com/report/github.com/rnov/Go-REST)
 ### Description:
 

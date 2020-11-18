@@ -45,14 +45,14 @@ func TestRateHandler_RateRecipe(t *testing.T) {
 			status: http.StatusOK,
 		},
 		{
-			name:           "error - Invalid Data Range",
+			name:           "error - invalid Data Range",
 			url:            "/recipes/5f10223c/rate",
 			requestPayload: &rate.Rate{Note: 10},
 			service: rateServiceMock{
 				rate: func(ID string, r *rate.Rate) error {
 					v := make(map[string]string)
 					v[errors.Rate] = errors.OutOfRange
-					return errors.NewInputError("Invalid input parameters", v)
+					return errors.NewInputError("invalid input parameters", v)
 				},
 			},
 			status: http.StatusBadRequest,

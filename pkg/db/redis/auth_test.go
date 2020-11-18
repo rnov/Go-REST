@@ -1,6 +1,7 @@
 package redis
 
 import (
+	e "errors"
 	"testing"
 
 	"github.com/rnov/Go-REST/pkg/errors"
@@ -27,7 +28,7 @@ func TestProxy_CheckAuth(t *testing.T) {
 			Auth: "qwertyzxcv12345",
 			accessor: &redisAccessorMock{
 				existsAccessor: func(key string) (int64, error) {
-					return 0, errors.NewDBErr("DB error")
+					return 0, e.New("DB error")
 				},
 			},
 			expectedErr: errors.NewDBErr("DB error"),

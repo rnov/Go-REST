@@ -1,6 +1,7 @@
 package redis
 
 import (
+	e "errors"
 	"testing"
 
 	"github.com/rnov/Go-REST/pkg/errors"
@@ -34,7 +35,7 @@ func TestProxy_RateRecipe(t *testing.T) {
 			inputRate: &rate.Rate{Note: 4},
 			accessor: &redisAccessorMock{
 				existsAccessor: func(key string) (int64, error) {
-					return 0, errors.NewDBErr("DB error")
+					return 0, e.New("DB error")
 				},
 			},
 			expectedErr: errors.NewDBErr("DB error"),
@@ -59,7 +60,7 @@ func TestProxy_RateRecipe(t *testing.T) {
 					return 1, nil
 				},
 				setErrAccessor: func(key string, fields map[string]interface{}) error {
-					return errors.NewDBErr("DB error")
+					return e.New("DB error")
 				},
 			},
 			expectedErr: errors.NewDBErr("DB error"),

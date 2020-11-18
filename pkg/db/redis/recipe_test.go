@@ -1,6 +1,8 @@
 package redis
 
 import (
+	e "errors"
+	"fmt"
 	"reflect"
 	"testing"
 
@@ -67,28 +69,54 @@ func TestProxy_GetRecipeByID(t *testing.T) {
 		expectedRcp *recipe.Recipe
 		expectedErr error
 	}{
-		// todo finish all the cases
 		{
-			name: "error - get all call",
+			name: "successful retrieve",
 			ID:   "654321",
 			accessor: &redisAccessorMock{
 				getAllAccessor: func(key string) (map[string]string, error) {
-					return nil, errors.NewDBErr("DB issue")
+					rcp := map[string]string{rcpID: "654321", name: "qwerty", prepTime: "20", difficulty: "3", vegetarian: "False"}
+					return rcp, nil
+				},
+			},
+			expectedRcp: &recipe.Recipe{
+				ID:         "654321",
+				Name:       "qwerty",
+				PrepTime:   20,
+				Difficulty: 3,
+				Vegetarian: false,
+			},
+		},
+		{
+			name: "error - get all DB call",
+			ID:   "654321",
+			accessor: &redisAccessorMock{
+				getAllAccessor: func(key string) (map[string]string, error) {
+					return nil, e.New("DB issue")
 				},
 			},
 			expectedErr: errors.NewDBErr("DB issue"),
 		},
-		//{
-		//	name:        "successful retrieve",
-		//	ID:          "654321",
-		//	accessor:    &redisAccessorMock{
-		//		getAllAccessor: func(key string) (map[string]string, error) {
-		//
-		//		},
-		//	},
-		//	expectedRcp: nil,
-		//	expectedErr: nil,
-		//},
+		{
+			name: "error - recipe does not exists",
+			ID:   "654321",
+			accessor: &redisAccessorMock{
+				getAllAccessor: func(key string) (map[string]string, error) {
+					return nil, nil
+				},
+			},
+			expectedErr: errors.NewExistErr(false),
+		},
+		{
+			name: "error - mapping from redis to recipe struct",
+			ID:   "654321",
+			accessor: &redisAccessorMock{
+				getAllAccessor: func(key string) (map[string]string, error) {
+					rcp := map[string]string{rcpID: "654321", name: "qwerty", prepTime: "isNotAnInt", difficulty: "3", vegetarian: "False"}
+					return rcp, nil
+				},
+			},
+			expectedErr: errors.NewDBErr(fmt.Sprintf("error parsing recipe from redis: %s", "strconv.Atoi: parsing \"isNotAnInt\": invalid syntax")),
+		},
 	}
 
 	for _, test := range tests {
@@ -108,13 +136,14 @@ func TestProxy_GetRecipeByID(t *testing.T) {
 }
 
 func TestProxy_GetAllRecipes(t *testing.T) {
+	// getAll could be called twice, this way we could mock both calls with different results.
+	var nCalls = 2
 	tests := []struct {
 		name         string
 		accessor     *redisAccessorMock
 		expectedRcps []*recipe.Recipe
 		expectedErr  error
 	}{
-		// todo finish all the cases
 		{
 			name: "successful retrieve - empty",
 			accessor: &redisAccessorMock{
@@ -124,6 +153,73 @@ func TestProxy_GetAllRecipes(t *testing.T) {
 			},
 			expectedRcps: nil,
 			expectedErr:  nil,
+		},
+		{
+			name: "successful retrieve - multiple results",
+			accessor: &redisAccessorMock{
+				keysAccessor: func(pattern string) ([]string, error) {
+					rcpKeys := []string{"654321", "98765"}
+					return rcpKeys, nil
+				},
+				getAllAccessor: func(key string) (map[string]string, error) {
+					nCalls--
+					if nCalls == 1 {
+						return map[string]string{rcpID: "654321", name: "qwerty", prepTime: "20", difficulty: "3", vegetarian: "False"}, nil
+					}
+					return map[string]string{rcpID: "98765", name: "zxcvb", prepTime: "60", difficulty: "4", vegetarian: "False"}, nil
+				},
+			},
+			expectedRcps: []*recipe.Recipe{
+				{
+					ID:         "654321",
+					Name:       "qwerty",
+					PrepTime:   20,
+					Difficulty: 3,
+					Vegetarian: false,
+				},
+				{
+					ID:         "98765",
+					Name:       "zxcvb",
+					PrepTime:   60,
+					Difficulty: 4,
+					Vegetarian: false,
+				},
+			},
+		},
+		{
+			name: "error - DB retrieving keys",
+			accessor: &redisAccessorMock{
+				keysAccessor: func(pattern string) ([]string, error) {
+					return nil, e.New("DB issue")
+				},
+			},
+			expectedErr: errors.NewDBErr("DB issue"),
+		},
+		{
+			name: "error - get all DB call",
+			accessor: &redisAccessorMock{
+				keysAccessor: func(pattern string) ([]string, error) {
+					rcpKeys := []string{"654321", "98765"}
+					return rcpKeys, nil
+				},
+				getAllAccessor: func(key string) (map[string]string, error) {
+					return nil, e.New("DB issue")
+				},
+			},
+			expectedErr: errors.NewDBErr("DB issue"),
+		},
+		{
+			name: "error - mapping from redis to recipe struct",
+			accessor: &redisAccessorMock{
+				keysAccessor: func(pattern string) ([]string, error) {
+					rcpKeys := []string{"654321", "98765"}
+					return rcpKeys, nil
+				},
+				getAllAccessor: func(key string) (map[string]string, error) {
+					return map[string]string{rcpID: "654321", name: "qwerty", prepTime: "20", difficulty: "isNotAnInt", vegetarian: "False"}, nil
+				},
+			},
+			expectedErr: errors.NewDBErr(fmt.Sprintf("error parsing recipe from redis: %s", "strconv.Atoi: parsing \"isNotAnInt\": invalid syntax")),
 		},
 	}
 
@@ -150,7 +246,6 @@ func TestProxy_CreateRecipe(t *testing.T) {
 		accessor    *redisAccessorMock
 		expectedErr error
 	}{
-		// todo finish all the cases
 		{
 			name: "successful create",
 			inputRcp: &recipe.Recipe{
@@ -169,6 +264,57 @@ func TestProxy_CreateRecipe(t *testing.T) {
 				},
 			},
 			expectedErr: nil,
+		},
+		{
+			name: "error - DB exist call",
+			inputRcp: &recipe.Recipe{
+				ID:         "654321",
+				Name:       "qwerty",
+				PrepTime:   20,
+				Difficulty: 3,
+				Vegetarian: false,
+			},
+			accessor: &redisAccessorMock{
+				existsAccessor: func(key string) (int64, error) {
+					return 0, e.New("DB issue")
+				},
+			},
+			expectedErr: errors.NewDBErr("DB issue"),
+		},
+		{
+			name: "error - recipe already exists",
+			inputRcp: &recipe.Recipe{
+				ID:         "654321",
+				Name:       "qwerty",
+				PrepTime:   20,
+				Difficulty: 3,
+				Vegetarian: false,
+			},
+			accessor: &redisAccessorMock{
+				existsAccessor: func(key string) (int64, error) {
+					return 1, nil
+				},
+			},
+			expectedErr: errors.NewExistErr(true),
+		},
+		{
+			name: "error - DB inserting recipe",
+			inputRcp: &recipe.Recipe{
+				ID:         "654321",
+				Name:       "qwerty",
+				PrepTime:   20,
+				Difficulty: 3,
+				Vegetarian: false,
+			},
+			accessor: &redisAccessorMock{
+				existsAccessor: func(key string) (int64, error) {
+					return 0, nil
+				},
+				setAccessor: func(key string, fields map[string]interface{}) (string, error) {
+					return "", e.New("DB issue")
+				},
+			},
+			expectedErr: errors.NewDBErr("DB issue"),
 		},
 	}
 
@@ -190,7 +336,6 @@ func TestProxy_UpdateRecipe(t *testing.T) {
 		accessor    *redisAccessorMock
 		expectedErr error
 	}{
-		// todo finish all the cases
 		{
 			name: "successful update",
 			inputRcp: &recipe.Recipe{
@@ -210,6 +355,76 @@ func TestProxy_UpdateRecipe(t *testing.T) {
 			},
 			expectedErr: nil,
 		},
+		{
+			name: "successful update",
+			inputRcp: &recipe.Recipe{
+				ID:         "654321",
+				Name:       "qwerty",
+				PrepTime:   20,
+				Difficulty: 3,
+				Vegetarian: false,
+			},
+			accessor: &redisAccessorMock{
+				existsAccessor: func(key string) (int64, error) {
+					return 1, nil
+				},
+				setErrAccessor: func(key string, fields map[string]interface{}) error {
+					return nil
+				},
+			},
+			expectedErr: nil,
+		},
+		{
+			name: "error - DB exist call",
+			inputRcp: &recipe.Recipe{
+				ID:         "654321",
+				Name:       "qwerty",
+				PrepTime:   20,
+				Difficulty: 3,
+				Vegetarian: false,
+			},
+			accessor: &redisAccessorMock{
+				existsAccessor: func(key string) (int64, error) {
+					return 0, e.New("DB issue")
+				},
+			},
+			expectedErr: errors.NewDBErr("DB issue"),
+		},
+		{
+			name: "error - recipe does not exist",
+			inputRcp: &recipe.Recipe{
+				ID:         "654321",
+				Name:       "qwerty",
+				PrepTime:   20,
+				Difficulty: 3,
+				Vegetarian: false,
+			},
+			accessor: &redisAccessorMock{
+				existsAccessor: func(key string) (int64, error) {
+					return 0, nil
+				},
+			},
+			expectedErr: errors.NewExistErr(false),
+		},
+		{
+			name: "error - DB setting new values",
+			inputRcp: &recipe.Recipe{
+				ID:         "654321",
+				Name:       "qwerty",
+				PrepTime:   20,
+				Difficulty: 3,
+				Vegetarian: false,
+			},
+			accessor: &redisAccessorMock{
+				existsAccessor: func(key string) (int64, error) {
+					return 1, nil
+				},
+				setErrAccessor: func(key string, fields map[string]interface{}) error {
+					return e.New("DB issue")
+				},
+			},
+			expectedErr: errors.NewDBErr("DB issue"),
+		},
 	}
 
 	for _, test := range tests {
@@ -224,13 +439,15 @@ func TestProxy_UpdateRecipe(t *testing.T) {
 }
 
 func TestProxy_DeleteRecipe(t *testing.T) {
+	// del to redis could be called twice, this way we could mock both calls with different results.
+	var nCalls = 2
 	tests := []struct {
 		name        string
 		ID          string
 		accessor    *redisAccessorMock
 		expectedErr error
+		delCalls    int
 	}{
-		// todo finish all the cases
 		{
 			name: "successful delete",
 			ID:   "654321",
@@ -243,6 +460,59 @@ func TestProxy_DeleteRecipe(t *testing.T) {
 				},
 			},
 			expectedErr: nil,
+		},
+		{
+			name: "error - DB exist call",
+			ID:   "654321",
+			accessor: &redisAccessorMock{
+				existsAccessor: func(key string) (int64, error) {
+					return 0, e.New("DB issue")
+				},
+			},
+			expectedErr: errors.NewDBErr("DB issue"),
+		},
+		{
+			name: "error - DB del call",
+			ID:   "654321",
+			accessor: &redisAccessorMock{
+				existsAccessor: func(key string) (int64, error) {
+					return 1, nil
+				},
+				delAccessor: func(key string) (int64, error) {
+					return 0, e.New("DB issue")
+				},
+			},
+			expectedErr: errors.NewDBErr("DB issue"),
+		},
+		{
+			name: "error - recipe does not exist",
+			ID:   "654321",
+			accessor: &redisAccessorMock{
+				existsAccessor: func(key string) (int64, error) {
+					return 1, nil
+				},
+				delAccessor: func(key string) (int64, error) {
+					return 0, nil
+				},
+			},
+			expectedErr: errors.NewExistErr(false),
+		},
+		{
+			name: "error - DB deleting recipe",
+			ID:   "654321",
+			accessor: &redisAccessorMock{
+				existsAccessor: func(key string) (int64, error) {
+					return 1, nil
+				},
+				delAccessor: func(key string) (int64, error) {
+					nCalls--
+					if nCalls == 1 {
+						return 1, nil
+					}
+					return 0, e.New("DB issue")
+				},
+			},
+			expectedErr: errors.NewDBErr("DB issue"),
 		},
 	}
 
