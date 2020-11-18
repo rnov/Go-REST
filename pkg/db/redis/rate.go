@@ -13,21 +13,20 @@ const (
 	ratePattern = "RATE_"
 )
 
-func (rProxy *Proxy) RateRecipe(recipeID string, rate *rate.Rate) error {
+func (p *Proxy) RateRecipe(recipeID string, rate *rate.Rate) error {
 	// check whether recipe exist
-	exists, err := rProxy.master.Exists(recipePattern + recipeID).Result()
+	//exists, err := p.main.Exists(recipePattern + recipeID).Result()
+	exists, err := p.exists(recipePattern + recipeID)
 	if err != nil {
 		return errors.NewDBErr(err.Error())
 	}
-
 	if exists == 0 {
 		return errors.NewExistErr(false)
 	}
-
 	// prepare to insert
 	redisFields := mapRateToRedisFields(rate.Note)
-	err = rProxy.master.HMSet(ratePattern+recipeID, redisFields).Err()
-
+	//err = p.main.HMSet(ratePattern+recipeID, redisFields).Err()
+	err = p.setErr(ratePattern+recipeID, redisFields)
 	if err != nil {
 		return errors.NewDBErr(err.Error())
 	}
