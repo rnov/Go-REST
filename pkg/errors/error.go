@@ -3,8 +3,6 @@ package errors
 import (
 	"encoding/json"
 	"net/http"
-
-	log "github.com/rnov/Go-REST/pkg/logger"
 )
 
 const (
@@ -87,12 +85,12 @@ func NewExistErr(exist bool) *ExistErr {
 	}
 }
 
-func BuildResponse(w http.ResponseWriter, method string, err error, l log.Loggers) {
+func BuildResponse(w http.ResponseWriter, method string, err error) (toLog bool) {
 	switch e := err.(type) {
 	case *FailedAuthErr:
 		w.WriteHeader(http.StatusUnauthorized)
 	case *DBErr:
-		l.Error(e.Error())
+		toLog = true
 		w.WriteHeader(http.StatusInternalServerError)
 	case *ExistErr:
 		if method == "GET" && !e.Exist {
@@ -107,15 +105,17 @@ func BuildResponse(w http.ResponseWriter, method string, err error, l log.Logger
 	case *InputErr:
 		body, jsonErr := json.Marshal(e)
 		if jsonErr != nil {
-			l.Errorf("system error: %s", e.Error())
+			toLog = true
 			w.WriteHeader(http.StatusInternalServerError)
-			return
+			return toLog
 		}
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusBadRequest)
 		w.Write(body)
 	default:
-		l.Error(e.Error())
+		toLog = true
 		w.WriteHeader(http.StatusInternalServerError)
 	}
+
+	return toLog
 }

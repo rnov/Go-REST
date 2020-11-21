@@ -40,7 +40,7 @@ func (rh *RateHandler) RateRecipe(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err := rh.rateSrv.Rate(ID, rating); err != nil {
-		errors.BuildResponse(w, r.Method, err, rh.log)
+		errors.BuildResponse(w, r.Method, err)
 	}
 
 	w.WriteHeader(http.StatusOK)

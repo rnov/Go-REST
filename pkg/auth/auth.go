@@ -19,7 +19,11 @@ func NewAuth(db db.Auth, l logger.Loggers) *Auth {
 	}
 }
 
-func (a Auth) Validate(ba string) error {
+type Validator interface {
+	Validate(ba string) error
+}
+
+func (a *Auth) Validate(ba string) error {
 	encodedAuth, err := encode(ba)
 	if err != nil {
 		return err

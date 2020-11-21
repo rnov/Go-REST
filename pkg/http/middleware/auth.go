@@ -13,7 +13,7 @@ const (
 	basic      = "Basic"
 )
 
-func Authentication(auth *auth.Auth, next func(http.ResponseWriter, *http.Request)) func(http.ResponseWriter, *http.Request) {
+func Authentication(auth auth.Validator, next func(http.ResponseWriter, *http.Request)) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var basicAuth string
 		ah := r.Header.Get(authHeader)
@@ -23,7 +23,7 @@ func Authentication(auth *auth.Auth, next func(http.ResponseWriter, *http.Reques
 			return
 		}
 		if err := auth.Validate(basicAuth); err != nil {
-			errors.BuildResponse(w, r.Method, err, auth.Log)
+			errors.BuildResponse(w, r.Method, err)
 			return
 		}
 		next(w, r)

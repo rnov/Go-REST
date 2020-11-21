@@ -6,18 +6,16 @@ import (
 	"testing"
 
 	"github.com/gorilla/mux"
-	"github.com/rnov/Go-REST/pkg/auth"
 	"github.com/rnov/Go-REST/pkg/errors"
-	"github.com/rnov/Go-REST/pkg/logger"
 )
 
-type authDBMock struct {
-	checkAuth func(auth string) error
+type validatorMock struct {
+	validate func(ba string) error
 }
 
-func (am *authDBMock) CheckAuth(auth string) error {
-	if am.checkAuth != nil {
-		return am.checkAuth(auth)
+func (am *validatorMock) Validate(BA string) error {
+	if am.validate != nil {
+		return am.validate(BA)
 	}
 	panic("Not implemented")
 }
@@ -25,7 +23,7 @@ func (am *authDBMock) CheckAuth(auth string) error {
 func TestAuthentication(t *testing.T) {
 	tests := []struct {
 		name           string
-		authDB         authDBMock
+		auth           validatorMock
 		AuthHeader     bool
 		Auth           string
 		next           func(w http.ResponseWriter, r *http.Request)
@@ -33,8 +31,8 @@ func TestAuthentication(t *testing.T) {
 	}{
 		{
 			name: "successful validation",
-			authDB: authDBMock{
-				checkAuth: func(auth string) error {
+			auth: validatorMock{
+				validate: func(ba string) error {
 					return nil
 				},
 			},
@@ -56,21 +54,19 @@ func TestAuthentication(t *testing.T) {
 		},
 		{
 			name: "error - non existent auth",
-			authDB: authDBMock{
-				checkAuth: func(auth string) error {
+			Auth: "basic dXNlcm5hbWU6cGFzc3dvcmQ=",
+			auth: validatorMock{
+				validate: func(ba string) error {
 					return errors.NewFailedAuthErr()
 				},
 			},
 			AuthHeader:     true,
-			Auth:           "dXNlcm5hbWU6cGFzc3dvcmQ=",
 			expectedStatus: 401,
 		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			l := logger.NewLogger()
-			a := auth.NewAuth(&test.authDB, l)
 
 			req, err := http.NewRequest("GET", "/auth", nil)
 			if err != nil {
@@ -81,7 +77,7 @@ func TestAuthentication(t *testing.T) {
 			// We create a ResponseRecorder (which satisfies http.ResponseWriter) to record the response.
 			rr := httptest.NewRecorder()
 			servicesRouter := mux.NewRouter()
-			servicesRouter.HandleFunc("/auth", Authentication(a, test.next)).Methods("GET")
+			servicesRouter.HandleFunc("/auth", Authentication(&test.auth, test.next)).Methods("GET")
 
 			// Our handlers satisfy http.Handler, so we can call their ServeHTTP method
 			// directly and pass in our Request and ResponseRecorder.
