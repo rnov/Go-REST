@@ -47,7 +47,7 @@ func main() {
 	}
 
 	// get auth accessor
-	authorization := auth.NewAuth(dbClient)
+	authorization := auth.NewAuth(dbClient, l)
 
 	// initialize controllers
 	// In this case recipe and rate share same DB and logger but could be different ones

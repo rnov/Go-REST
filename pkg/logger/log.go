@@ -27,7 +27,7 @@ type Loggers interface {
 }
 
 // fixme whether we want to dump the logs into a file ...
-//func NewLogger(log config.LoggerConfig, path string) *logging.Logger {
+//func NewLogger(log config.LoggerConfig, path string) *logging.Log {
 func NewLogger() *logging.Logger {
 	// initialize a logger
 	logger := logging.MustGetLogger("goREST")

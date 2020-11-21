@@ -1,32 +1,36 @@
 package auth
 
 import (
-	"log"
-
 	"golang.org/x/crypto/bcrypt"
 
 	"github.com/rnov/Go-REST/pkg/db"
+	"github.com/rnov/Go-REST/pkg/logger"
 )
 
 type Auth struct {
-	DB db.Auth
+	DB  db.Auth
+	Log logger.Loggers
 }
 
-func NewAuth(db db.Auth) *Auth {
+func NewAuth(db db.Auth, l logger.Loggers) *Auth {
 	return &Auth{
-		DB: db,
+		DB:  db,
+		Log: l,
 	}
 }
 
 func (a Auth) Validate(ba string) error {
-	encodedAuth := encode(ba)
+	encodedAuth, err := encode(ba)
+	if err != nil {
+		return err
+	}
 	if err := a.DB.CheckAuth(encodedAuth); err != nil {
 		return err
 	}
 	return nil
 }
 
-func encode(ba string) string {
+func encode(ba string) (string, error) {
 	// Use GenerateFromPassword to hash & salt pwd.
 	// MinCost is just an integer constant provided by the bcrypt
 	// package along with DefaultCost & MaxCost.
@@ -34,8 +38,8 @@ func encode(ba string) string {
 	// than the MinCost (4)
 	hash, err := bcrypt.GenerateFromPassword([]byte(ba), bcrypt.DefaultCost)
 	if err != nil {
-		log.Println(err)
+		return "", err
 	} // GenerateFromPassword returns a byte slice so we need to
 	// convert the bytes to a string and return it
-	return string(hash)
+	return string(hash), nil
 }

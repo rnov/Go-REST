@@ -8,7 +8,7 @@ import (
 	"github.com/gorilla/mux"
 
 	"github.com/rnov/Go-REST/pkg/errors"
-	log "github.com/rnov/Go-REST/pkg/logger"
+	"github.com/rnov/Go-REST/pkg/logger"
 	"github.com/rnov/Go-REST/pkg/recipe"
 	"github.com/rnov/Go-REST/pkg/service"
 )
@@ -20,14 +20,14 @@ const (
 // interface, could get any controller that implements the interface (redis, mongo, psql ...)
 type RecipeHandler struct {
 	rcpSrv service.RecipeMng
-	logger log.Loggers
-	// add a logger ? be able to log at handler level ?? move from service and log in here, good idea ?
+	log    logger.Loggers
+	// add a log ? be able to log at handler level ?? move from service and log in here, good idea ?
 }
 
-func NewRecipeHandler(rcpSrv service.RecipeMng, l log.Loggers) *RecipeHandler {
+func NewRecipeHandler(rcpSrv service.RecipeMng, l logger.Loggers) *RecipeHandler {
 	recipeHandler := &RecipeHandler{
 		rcpSrv: rcpSrv,
-		logger: l,
+		log:    l,
 	}
 	return recipeHandler
 }
@@ -42,12 +42,13 @@ func (rh *RecipeHandler) GetRecipeByID(w http.ResponseWriter, r *http.Request) {
 
 	rcp, err := rh.rcpSrv.GetByID(ID)
 	if err != nil {
-		errors.BuildResponse(w, r.Method, err)
+		errors.BuildResponse(w, r.Method, err, rh.log)
 	}
 
 	// Marshal provided interface into JSON structure
 	recipeJSON, err := json.Marshal(rcp)
 	if err != nil {
+		rh.log.Errorf("system error: %s", err.Error())
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
@@ -61,12 +62,16 @@ func (rh *RecipeHandler) GetRecipeByID(w http.ResponseWriter, r *http.Request) {
 func (rh *RecipeHandler) GetAllRecipes(w http.ResponseWriter, r *http.Request) {
 	rcps, err := rh.rcpSrv.ListAll()
 	if err != nil {
-		errors.BuildResponse(w, r.Method, err)
+		errors.BuildResponse(w, r.Method, err, rh.log)
 	}
 	var recipesJSON []byte
 	w.Header().Set("Content-Type", "application/json")
 	recipesJSON, jsonErr := json.Marshal(rcps)
-	if _, parseErr := w.Write(recipesJSON); jsonErr != nil || parseErr != nil {
+	if jsonErr != nil {
+		rh.log.Errorf("system error: %s", jsonErr.Error())
+	}
+	if _, parseErr := w.Write(recipesJSON); parseErr != nil {
+		rh.log.Errorf("system error: %s", parseErr.Error())
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
@@ -81,12 +86,13 @@ func (rh *RecipeHandler) CreateRecipe(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err := rh.rcpSrv.Create(rcp); err != nil {
-		errors.BuildResponse(w, r.Method, err)
+		errors.BuildResponse(w, r.Method, err, rh.log)
 		return
 	}
 
 	body, jsonErr := json.Marshal(rcp)
 	if jsonErr != nil {
+		rh.log.Errorf("system error: %s", jsonErr.Error())
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
@@ -111,11 +117,12 @@ func (rh *RecipeHandler) UpdateRecipe(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err := rh.rcpSrv.Update(ID, rcp); err != nil {
-		errors.BuildResponse(w, r.Method, err)
+		errors.BuildResponse(w, r.Method, err, rh.log)
 	}
 
-	body, jsonErr := json.Marshal(rcp)
-	if jsonErr != nil {
+	body, err := json.Marshal(rcp)
+	if err != nil {
+		rh.log.Errorf("system error: %s", err.Error())
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
@@ -132,7 +139,7 @@ func (rh *RecipeHandler) DeleteRecipe(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err := rh.rcpSrv.Delete(ID); err != nil {
-		errors.BuildResponse(w, r.Method, err)
+		errors.BuildResponse(w, r.Method, err, rh.log)
 		return
 	}
 

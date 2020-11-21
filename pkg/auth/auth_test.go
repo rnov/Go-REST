@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/rnov/Go-REST/pkg/errors"
+	"github.com/rnov/Go-REST/pkg/logger"
 )
 
 type authDBMock struct {
@@ -46,7 +47,8 @@ func TestAuth_Validate(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			auth := NewAuth(&test.authDB)
+			l := logger.NewLogger()
+			auth := NewAuth(&test.authDB, l)
 			err := auth.Validate("dXNlcm5hbWU6cGFzc3dvcmQ=")
 			if err != nil && !e.Is(err, test.expectedErr) {
 				t.Errorf("error validation, unexpected error type")

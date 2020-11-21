@@ -8,6 +8,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/rnov/Go-REST/pkg/auth"
 	"github.com/rnov/Go-REST/pkg/errors"
+	"github.com/rnov/Go-REST/pkg/logger"
 )
 
 type authDBMock struct {
@@ -68,7 +69,8 @@ func TestAuthentication(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			a := auth.NewAuth(&test.authDB)
+			l := logger.NewLogger()
+			a := auth.NewAuth(&test.authDB, l)
 
 			req, err := http.NewRequest("GET", "/auth", nil)
 			if err != nil {

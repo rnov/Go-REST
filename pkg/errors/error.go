@@ -3,6 +3,8 @@ package errors
 import (
 	"encoding/json"
 	"net/http"
+
+	log "github.com/rnov/Go-REST/pkg/logger"
 )
 
 const (
@@ -66,49 +68,54 @@ func NewInputError(msg string, params map[string]string) *InputErr {
 }
 
 type ExistErr struct {
-	exist bool
+	Exist bool
 }
 
 func (ee *ExistErr) Error() string {
 	var retMsg string
-	if ee.exist {
+	if ee.Exist {
 		retMsg = "item already exists"
 	} else {
-		retMsg = "item does not exist"
+		retMsg = "item does not Exist"
 	}
 	return retMsg
 }
 
 func NewExistErr(exist bool) *ExistErr {
 	return &ExistErr{
-		exist: exist,
+		Exist: exist,
 	}
 }
 
-func BuildResponse(w http.ResponseWriter, method string, err error) {
+func BuildResponse(w http.ResponseWriter, method string, err error, l log.Loggers) {
 	switch e := err.(type) {
 	case *FailedAuthErr:
 		w.WriteHeader(http.StatusUnauthorized)
 	case *DBErr:
+		l.Error(e.Error())
 		w.WriteHeader(http.StatusInternalServerError)
 	case *ExistErr:
-		if method == "GET" && !e.exist {
+		if method == "GET" && !e.Exist {
 			w.WriteHeader(http.StatusNotFound)
-		} else if method == "POST" && e.exist {
+		} else if method == "POST" && e.Exist {
 			w.WriteHeader(http.StatusForbidden)
-		} else if method == "PUT" && !e.exist {
+		} else if method == "PUT" && !e.Exist {
 			w.WriteHeader(http.StatusNoContent)
-		} else if method == "DELETE" && !e.exist {
+		} else if method == "DELETE" && !e.Exist {
 			w.WriteHeader(http.StatusNotFound)
 		}
 	case *InputErr:
 		body, jsonErr := json.Marshal(e)
 		if jsonErr != nil {
+			l.Errorf("system error: %s", e.Error())
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusBadRequest)
 		w.Write(body)
+	default:
+		l.Error(e.Error())
+		w.WriteHeader(http.StatusInternalServerError)
 	}
 }
