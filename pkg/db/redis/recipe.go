@@ -11,11 +11,11 @@ import (
 
 const (
 	recipePattern = "RECIPE_"
-	rcpID         = "ID"
-	name          = "Name"
-	prepTime      = "Preptime"
-	vegetarian    = "Vegetarian"
-	difficulty    = "Difficulty"
+	rcpID         = "id"
+	name          = "name"
+	prepTime      = "preptime"
+	vegetarian    = "vegetarian"
+	difficulty    = "difficulty"
 )
 
 func (p *Proxy) GetRecipeByID(ID string) (*recipe.Recipe, error) {

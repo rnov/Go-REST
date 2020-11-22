@@ -1,18 +1,16 @@
 version: '2'
 services:
-
-    # Application container
-    go:
+    app:
         build: .
+        image: gorest:compose
         ports:
-            - "80:8080"
+            - "8080:8080"
         links:
 #            - postgres
 #            - mongodb
             - redis
-        command: "go run /go/src/goRest/application/main.go"
         environment:
-            ENV_PATH: 'config/environments/docker/config.yml'
+            ENV_PATH: 'config.yml'
             DEBUG: 'true'
             PORT: '8080'
     redis:

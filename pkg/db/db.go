@@ -2,7 +2,6 @@ package db
 
 import (
 	"errors"
-
 	"github.com/rnov/Go-REST/pkg/config"
 	"github.com/rnov/Go-REST/pkg/db/redis"
 	"github.com/rnov/Go-REST/pkg/rate"
@@ -32,7 +31,7 @@ type Client interface {
 }
 
 func NewClient(cfg config.DBConfig) (Client, error) {
-	switch cfg.Type {
+	switch cfg.Name {
 	case "redis":
 		// note: check ping pong etc - consult main
 		redisClient := redis.NewRedisClient(cfg.Host, cfg.Port, cfg.DB)

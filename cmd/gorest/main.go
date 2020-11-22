@@ -21,29 +21,25 @@ const (
 func main() {
 	fmt.Println("Hello, 世界")
 
-	// load the application configuration
+	l := logger.NewLogger()
+
+	// load app config
 	envConfigPath, present := os.LookupEnv(EnvVarPath)
 	if !present {
-		log.Fatal("Env Variable Not present")
+		l.Fatal("Env Variable Not present")
 	} else if len(envConfigPath) == 0 {
-		log.Fatal("Empty Env Variable")
+		l.Fatal("Empty Env Variable")
 	}
 
 	cfg, err := infra.LoadAPIConfig(envConfigPath)
-
 	if err != nil {
-		log.Fatal(err)
+		l.Fatal("error reading configuration " + envConfigPath + ": " + err.Error())
 	}
-
-	// create RecipeSrv custom logger
-	//l := logger.NewLogger(cfg.RedisLog, cfg.LogsPath)
-	l := logger.NewLogger()
-	//fmt.Sprint(l)
 
 	// create DB client
 	dbClient, err := db.NewClient(cfg.DBCfg)
 	if err != nil {
-		log.Fatal(err.Error())
+		l.Fatal(err.Error())
 	}
 
 	// get auth accessor

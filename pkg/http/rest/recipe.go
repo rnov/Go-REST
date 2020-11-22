@@ -62,6 +62,7 @@ func (rh *RecipeHandler) GetRecipeByID(w http.ResponseWriter, r *http.Request) {
 func (rh *RecipeHandler) GetAllRecipes(w http.ResponseWriter, r *http.Request) {
 	rcps, err := rh.rcpSrv.ListAll()
 	if err != nil {
+		rh.log.Errorf("system error: %s", err.Error())
 		errors.BuildResponse(w, r.Method, err)
 	}
 	var recipesJSON []byte

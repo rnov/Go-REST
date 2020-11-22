@@ -1,21 +1,17 @@
 package config
 
 import (
-	"io/ioutil"
-	"log"
-
 	"gopkg.in/yaml.v2"
+	"io/ioutil"
 )
 
 func LoadAPIConfig(confPath string) (APIConfig, error) {
 	var config APIConfig
 	data, err := ioutil.ReadFile(confPath)
 	if err != nil {
-		log.Fatal("error reading configuration " + confPath)
+		return config, err
 	}
-
 	err = yaml.Unmarshal(data, &config)
-
 	if err != nil {
 		return config, err
 	}
@@ -24,7 +20,7 @@ func LoadAPIConfig(confPath string) (APIConfig, error) {
 }
 
 type DBConfig struct {
-	Type string `yaml:"type"`
+	Name string `yaml:"name"`
 	Host string `yaml:"host"`
 	Port int    `yaml:"port"`
 	DB   int    `yaml:"dbInterface"`
