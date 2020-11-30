@@ -43,6 +43,7 @@ func (rh *RecipeHandler) GetRecipeByID(w http.ResponseWriter, r *http.Request) {
 	rcp, err := rh.rcpSrv.GetByID(ID)
 	if err != nil {
 		errors.BuildResponse(w, r.Method, err)
+		return
 	}
 
 	// Marshal provided interface into JSON structure
@@ -70,6 +71,7 @@ func (rh *RecipeHandler) GetAllRecipes(w http.ResponseWriter, r *http.Request) {
 	recipesJSON, jsonErr := json.Marshal(rcps)
 	if jsonErr != nil {
 		rh.log.Errorf("system error: %s", jsonErr.Error())
+		return
 	}
 	if _, parseErr := w.Write(recipesJSON); parseErr != nil {
 		rh.log.Errorf("system error: %s", parseErr.Error())
@@ -97,8 +99,8 @@ func (rh *RecipeHandler) CreateRecipe(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-	w.WriteHeader(http.StatusCreated)
 	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusCreated)
 	w.Write(body)
 }
 
@@ -119,6 +121,7 @@ func (rh *RecipeHandler) UpdateRecipe(w http.ResponseWriter, r *http.Request) {
 	}
 	if err := rh.rcpSrv.Update(ID, rcp); err != nil {
 		errors.BuildResponse(w, r.Method, err)
+		return
 	}
 
 	body, err := json.Marshal(rcp)
@@ -127,7 +130,6 @@ func (rh *RecipeHandler) UpdateRecipe(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-	w.WriteHeader(http.StatusOK)
 	w.Header().Set("Content-Type", "application/json")
 	w.Write(body)
 }

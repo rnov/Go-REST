@@ -29,7 +29,6 @@ func NewRouter(rcpHand *RecipeHandler, rateHand *RateHandler, auth *auth.Auth) *
 	return APIRESTRouter
 }
 
-// note private functions needed to configure route's endpoints, used in NewRouter
 func configRecipeEndpoints(r *mux.Router, rcpHand *RecipeHandler, auth *auth.Auth) {
 	r.HandleFunc("/recipes/{ID}", rcpHand.GetRecipeByID).Methods("GET")
 	r.HandleFunc("/recipes", rcpHand.GetAllRecipes).Methods("GET")

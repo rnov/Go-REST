@@ -17,6 +17,7 @@ type RateHandler struct {
 	log     logger.Loggers
 }
 
+// NewRateHandler
 func NewRateHandler(srv service.Rater, l logger.Loggers) *RateHandler {
 	rateHandler := &RateHandler{
 		rateSrv: srv,
@@ -25,6 +26,7 @@ func NewRateHandler(srv service.Rater, l logger.Loggers) *RateHandler {
 	return rateHandler
 }
 
+// RateRecipe
 func (rh *RateHandler) RateRecipe(w http.ResponseWriter, r *http.Request) {
 	ID := mux.Vars(r)["ID"]
 	if len(ID) == 0 {
@@ -41,6 +43,7 @@ func (rh *RateHandler) RateRecipe(w http.ResponseWriter, r *http.Request) {
 	}
 	if err := rh.rateSrv.Rate(ID, rating); err != nil {
 		errors.BuildResponse(w, r.Method, err)
+		return
 	}
 
 	w.WriteHeader(http.StatusOK)

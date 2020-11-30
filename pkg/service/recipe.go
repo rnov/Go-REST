@@ -16,7 +16,6 @@ type RecipeMng interface {
 	Delete(recipeID string) error
 }
 
-// this is a must, struct can not implement interface from different package.
 type Recipe struct {
 	rcpDB db.Recipe
 	//logger log.Loggers
@@ -52,7 +51,7 @@ func (r *Recipe) ListAll() ([]*r.Recipe, error) {
 }
 
 func (r *Recipe) Create(recipe *r.Recipe) error {
-	if v := validateRecipeInput(recipe); len(v) > 0 {
+	if v := validateRecipe(recipe); len(v) > 0 {
 		return errors.NewInputError("Invalid input parameters", v)
 	}
 	if err := r.rcpDB.CreateRecipe(recipe); err != nil {
@@ -70,7 +69,7 @@ func (r *Recipe) Update(ID string, recipe *r.Recipe) error {
 		return errors.NewInputError("ID param and recipe ID do not match", nil)
 	}
 
-	if v := validateRecipeInput(recipe); len(v) > 0 {
+	if v := validateRecipe(recipe); len(v) > 0 {
 		return errors.NewInputError("Invalid input parameters", v)
 	}
 	err := r.rcpDB.UpdateRecipe(recipe)
@@ -91,10 +90,11 @@ func (r *Recipe) Delete(recipeID string) error {
 	return nil
 }
 
-func validateRecipeInput(recipe *r.Recipe) map[string]string {
+// validateRecipe validates that all the recipe's fields values are within their defined range.
+func validateRecipe(recipe *r.Recipe) map[string]string {
 	valid := make(map[string]string)
 
-	if recipe.Difficulty <= 1 || recipe.Difficulty > 3 {
+	if recipe.Difficulty < 1 || recipe.Difficulty > 3 {
 		valid[errors.Difficulty] = errors.OutOfRange
 	}
 	if len(recipe.Name) > 100 {
@@ -109,6 +109,7 @@ func validateRecipeInput(recipe *r.Recipe) map[string]string {
 	return valid
 }
 
+// validateRcpID - validates that a incoming recipe ID has the proper format, alphanumeric up to 12 digits.
 func validateRcpID(ID string) bool {
 	regex, _ := regexp.Compile("^[a-zA-Z0-9]{1,12}$")
 	return regex.MatchString(ID)

@@ -37,7 +37,7 @@ func TestAuthentication(t *testing.T) {
 				},
 			},
 			AuthHeader: true,
-			Auth:       "basic dXNlcm5hbWU6cGFzc3dvcmQ=",
+			Auth:       "Basic dXNlcm5hbWU6cGFzc3dvcmQ=",
 			next: func(w http.ResponseWriter, r *http.Request) {
 			},
 			expectedStatus: 200,
@@ -67,7 +67,6 @@ func TestAuthentication(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-
 			req, err := http.NewRequest("GET", "/auth", nil)
 			if err != nil {
 				t.Fatal(err)

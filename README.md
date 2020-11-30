@@ -1,14 +1,14 @@
 # Go-REST
-[![CircleCI](https://circleci.com/gh/rnov/Go-REST/tree/fix%2Fcode-refactor.svg?style=svg)](https://circleci.com/gh/rnov/Go-REST/tree/fix%2Fcode-refactor)
-[![Coverage Status](https://coveralls.io/repos/github/rnov/Go-REST/badge.svg?branch=fix/code-refactor)](https://coveralls.io/github/rnov/Go-REST?branch=fix/code-refactor)
+[![CircleCI](https://circleci.com/gh/rnov/Go-REST/tree/master.svg?style=svg)](https://circleci.com/gh/rnov/Go-REST/tree/master)
+[![Coverage Status](https://coveralls.io/repos/github/rnov/Go-REST/badge.svg?branch=master)](https://coveralls.io/github/rnov/Go-REST?branch=master)
 [![Go Report Card](https://goreportcard.com/badge/github.com/rnov/Go-REST)](https://goreportcard.com/report/github.com/rnov/Go-REST)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 ### Description:
 
-An api REST in go - a toy project - implementing SOLID principles and applying best practices whenever possible,
-it aims to be used as a reference and a portfolio since everything i do is private.
+Gorest is a portfolio like REST API project that also serves as a reminder and template since most of the projects i'm involved are private.
+Note that the business logic is rather simplistic and is not the focus of this project.
 
-This simple Api REST is used to CRUD restaurant's recipes, as today has only 6 calls :
-
+API REST endpoints:
 
 | Name   | Method       | URL                   | Protected |
 | :---:    | :---:      | :---:                 | :---:       |
@@ -20,11 +20,11 @@ This simple Api REST is used to CRUD restaurant's recipes, as today has only 6 c
 | Rate   | `POST`       | `/recipes/{ID}/rate`   | ✘         |
 
 
-I tried to keep the code as vanilla as possible - avoiding installing many third party packages, some of them are:
+I tried to keep the code as vanilla as possible - avoiding third party packages some of them are :
 
 | Packages |Description
 |:--------:|:-----------------------------------:|
-|github.com/julienschmidt/httprouter| Most popular router handler for Go, great performance easy to use |
+|github.com/gorilla/mux| Most popular router handler for Go, great performance easy to use |
 |github.com/go-redis/redis| A redis client package for Go |
 |github.com/go-logging| Great package to manage logs, very useful in larger projects |
 |gopkg.in/yaml.v2| Package used to proceed the config files |
@@ -32,24 +32,34 @@ I tried to keep the code as vanilla as possible - avoiding installing many third
 
 ### Deployment :
 
-1- Easy way, using Docker :
+1- Docker :
 ```sh
+# only dockefile, mind to start a DB to connect to
+docker built -t gorest:test .
+docker run gorest:test
+
+# with compose :
 $ docker-compose build
 $ docker-compose run
 ```
 
-2- The long way is configuring the environment in the host, need to install some packages and set a env variable to read the configuration file.
+2- Local:
 
 ```sh
-$ export ENV_PATH="config/environments/production/config.yml"
+$ export ENV_PATH="config/envs/local/config.yml"
 ```
 
 Once running, in order to make protected call redis db needs to be populated, run following command :
 ```sh
-$ cat populateRedis.txt | redis-cli -p 6379
+$ cat populate-Redis.sh
 ```
-Note: There is a json file with the calls that can be imported by Postman.
+
 ### Architecture :
 
-It is designed to separate low level from high level abstraction, making it easier to add new functionalities and scaling.
-It would be quite easy to add or migrate to another DB, lets say psql/mongo or adding multilevel db architecture without changing any high level abstraction code and vice versa.
+* Hexagonal(Onion) like design, build in mind to separate the different adapters, from the application and domain
+  layers, achieved by relaying on dependency injection through interfaces.
+* Logs only in handlers (adapter).
+* Defined error types, since all the errors when produced change the program flow but each error type (user, server...)
+    have different behaviour and consequences.
+* Twelve-Factor App principles in mind.
+* No third party lib for testing, thanks to the design everything can be mocked easily.

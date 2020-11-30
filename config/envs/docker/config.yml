@@ -5,9 +5,3 @@ dbConfig:
   host: redis
   port: 6379
   db: 0
-
-loggers_paths: ""
-redis_logger:
-  name: "redisLog"
-  file: "redisLog.txt"
-  active: true

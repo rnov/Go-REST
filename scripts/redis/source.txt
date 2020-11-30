@@ -1,5 +1,5 @@
 HMSET RECIPE_101 name recipe1 preptime 10 difficulty 1 vegetarian False
 HMSET RECIPE_102 name recipe2 preptime 20 difficulty 2 vegetarian True
 HMSET RECIPE_103 name recipe3 preptime 30 difficulty 3 vegetarian False
-SET TOKEN_0YWLtw0kQS.e6p2aK0Zj9 ShortTimeUser EX 300
-SET TOKEN_JwXmFWd4Nd.mzBui538Hj LongTimeUser EX 86400
+SET TOKEN_297a7440c05d546c02ad0b7f810b13de6437f7a201961a4b5b2f7183b62c4a0c ShortTimeUser EX 300
+SET TOKEN_2f6b5f524ab44001d3af6a5c4ab63ea78215a6ea16561722bd161b01bf97a94e LongTimeUser EX 86400

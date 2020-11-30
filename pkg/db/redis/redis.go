@@ -6,7 +6,7 @@ import (
 	"github.com/go-redis/redis"
 )
 
-// In order to be able to mock redis DB access without 3th parties or running an actual instance.
+// redisAccessor - to be able to mock redis DB access without 3th parties or running any instance.
 type redisAccessor interface {
 	getAll(key string) (map[string]string, error)
 	keys(pattern string) ([]string, error)
@@ -16,6 +16,7 @@ type redisAccessor interface {
 	del(key string) (int64, error)
 }
 
+// Proxy - redis client - mock field is a compromise to our test since the 3th party redis client is a struct.
 type Proxy struct {
 	main redis.Client
 	mock redisAccessor
@@ -45,7 +46,7 @@ func NewRedisClient(host string, port int, db int) *redis.Client {
 	return client
 }
 
-// to document : a compromise since we have a 3th party and Go "cannot define methods on non-local type" e.g redis.Client is outside the package
+// Compromise since a 3th party redis-client is used and Go "cannot define methods on non-local type" e.g redis.Client being a 3th party package
 func (p *Proxy) getAll(key string) (map[string]string, error) {
 	if p.mock != nil {
 		return p.mock.getAll(key)

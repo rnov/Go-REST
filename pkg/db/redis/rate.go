@@ -15,7 +15,6 @@ const (
 
 func (p *Proxy) RateRecipe(recipeID string, rate *rate.Rate) error {
 	// check whether recipe exist
-	//exists, err := p.main.Exists(recipePattern + recipeID).Result()
 	exists, err := p.exists(recipePattern + recipeID)
 	if err != nil {
 		return errors.NewDBErr(err.Error())
@@ -25,7 +24,6 @@ func (p *Proxy) RateRecipe(recipeID string, rate *rate.Rate) error {
 	}
 	// prepare to insert
 	redisFields := mapRateToRedisFields(rate.Note)
-	//err = p.main.HMSet(ratePattern+recipeID, redisFields).Err()
 	err = p.setErr(ratePattern+recipeID, redisFields)
 	if err != nil {
 		return errors.NewDBErr(err.Error())
@@ -34,6 +32,7 @@ func (p *Proxy) RateRecipe(recipeID string, rate *rate.Rate) error {
 	return nil
 }
 
+// mapRateToRedisFields - map rate struct to a map in order to be inserted to redis.
 func mapRateToRedisFields(rating int) map[string]interface{} {
 	mappedData := make(map[string]interface{})
 	// since AUTH it is not necessary we use the timestamp as key to insert the rating into redis

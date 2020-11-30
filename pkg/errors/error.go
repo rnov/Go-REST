@@ -23,6 +23,8 @@ const (
 	RateID = "ID"
 )
 
+// DBErr is a defined error type whose purpose is to be used whenever a DB related error has occurred and needs to be
+//logged.
 type DBErr struct {
 	msgToLog string
 }
@@ -37,6 +39,7 @@ func NewDBErr(msg string) *DBErr {
 	}
 }
 
+// FailedAuthErr is a defined error type whose purpose is to acknowledge a failed authorization attempt.
 type FailedAuthErr struct {
 }
 
@@ -48,7 +51,8 @@ func NewFailedAuthErr() *FailedAuthErr {
 	return &FailedAuthErr{}
 }
 
-// Error for user Invalid input parameterss - such errors are not being logged their purpose is to inform user of the missing/wrong data
+// InputErr is a defined error type whose purpose is to acknowledge any error due user's input and carry relevant
+//information regarding the error.
 type InputErr struct {
 	Msg        string            `json:"error,omitempty"`
 	Parameters map[string]string `json:"parameters,omitempty"`
@@ -65,6 +69,8 @@ func NewInputError(msg string, params map[string]string) *InputErr {
 	}
 }
 
+// ExistErr is a defined error type whose purpose is to acknowledge that an error has occurred because the data already
+//exists or is produce because is missing.
 type ExistErr struct {
 	Exist bool
 }
@@ -85,6 +91,9 @@ func NewExistErr(exist bool) *ExistErr {
 	}
 }
 
+// BuildResponse - is a method that is being used by handler methods whenever an error occurs and a response based on the error type
+// needs to be built. It also acknowledge whether an error needs to be logged, due the logging policy design.
+// A compromise decision that tights the relation error-log but for the current size is a small one.
 func BuildResponse(w http.ResponseWriter, method string, err error) (toLog bool) {
 	switch e := err.(type) {
 	case *FailedAuthErr:
@@ -100,6 +109,8 @@ func BuildResponse(w http.ResponseWriter, method string, err error) (toLog bool)
 		} else if method == "PUT" && !e.Exist {
 			w.WriteHeader(http.StatusNoContent)
 		} else if method == "DELETE" && !e.Exist {
+			w.WriteHeader(http.StatusNotFound)
+		} else if method == "POST" && !e.Exist {
 			w.WriteHeader(http.StatusNotFound)
 		}
 	case *InputErr:

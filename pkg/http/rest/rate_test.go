@@ -57,6 +57,17 @@ func TestRateHandler_RateRecipe(t *testing.T) {
 			},
 			status: http.StatusBadRequest,
 		},
+		{
+			name:           "error - recipe does not exist",
+			url:            "/recipes/987654/rate",
+			requestPayload: &rate.Rate{Note: 10},
+			service: rateServiceMock{
+				rate: func(ID string, r *rate.Rate) error {
+					return errors.NewExistErr(false)
+				},
+			},
+			status: http.StatusNotFound,
+		},
 	}
 
 	// Create a request to pass to our handler. We don't name have any query parameters for now, so we'll

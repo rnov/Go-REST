@@ -12,7 +12,6 @@ type Rater interface {
 
 type Rate struct {
 	rateDB db.Rate
-	//// add more func fields - there used to be a logger-
 }
 
 func NewRate(rateDB db.Rate) *Rate {
