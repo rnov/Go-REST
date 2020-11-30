@@ -1,0 +1,1 @@
+cat source.txt | redis-cli -p 6379
