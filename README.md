@@ -1,7 +1,6 @@
 # Go-REST
 [![CircleCI](https://circleci.com/gh/rnov/Go-REST/tree/master.svg?style=svg)](https://circleci.com/gh/rnov/Go-REST/tree/master)
 [![Coverage Status](https://coveralls.io/repos/github/rnov/Go-REST/badge.svg?branch=master)](https://coveralls.io/github/rnov/Go-REST?branch=master)
-[![Go Report Card](https://goreportcard.com/badge/github.com/rnov/Go-REST)](https://goreportcard.com/report/github.com/rnov/Go-REST)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 ### Description:
 
